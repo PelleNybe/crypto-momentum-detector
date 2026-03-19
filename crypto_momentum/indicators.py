@@ -1,6 +1,7 @@
 import pandas as pd
 from ta.momentum import RSIIndicator
 from ta.trend import MACD, SMAIndicator
+from ta.volatility import BollingerBands
 
 class MomentumIndicators:
     def __init__(self, data: pd.DataFrame):
@@ -44,5 +45,11 @@ class MomentumIndicators:
 
         sma_50 = SMAIndicator(close=close, window=50)
         df['SMA_50'] = sma_50.sma_indicator()
+
+        # 4. Bollinger Bands (20 period, 2 std dev)
+        bollinger = BollingerBands(close=close, window=20, window_dev=2)
+        df['BB_High'] = bollinger.bollinger_hband()
+        df['BB_Low'] = bollinger.bollinger_lband()
+        df['BB_Mid'] = bollinger.bollinger_mavg()
 
         return df
