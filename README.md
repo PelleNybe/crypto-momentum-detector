@@ -5,12 +5,17 @@ Crypto Momentum Detector is a command-line interface (CLI) tool designed to anal
 ## Features
 
 - **Historical Data Fetching**: Retrieves Open, High, Low, Close, and Volume data for any supported cryptocurrency pair (e.g., BTC-USD, ETH-USD) using `yfinance`.
+- **Concurrent Execution**: Analyzes multiple tickers in parallel using `ThreadPoolExecutor` for optimal performance.
 - **Technical Indicators**: Calculates crucial indicators using the `ta` library:
   - Relative Strength Index (RSI - 14 periods)
   - Moving Average Convergence Divergence (MACD)
   - Simple Moving Averages (SMA - 20 and 50 periods)
+  - Exponential Moving Averages (EMA - 20 and 50 periods)
+  - Average True Range (ATR - 14 periods)
+  - Bollinger Bands
 - **Signal Generation**: Evaluates indicators to output precise trading signals: `BUY`, `SELL`, `HOLD`, `STRONG BUY`, and `STRONG SELL`.
 - **Rich CLI Output**: Beautifully formatted terminal tables using the `rich` library to present findings clearly.
+- **Data Export**: Export your momentum analysis to a CSV file for tracking and further analysis.
 
 ## Installation
 
@@ -29,7 +34,7 @@ Ensure you have Python 3.8+ installed.
 
 ## Usage
 
-Run the CLI tool using `main.py`. You can specify the tickers, historical data period, and data interval.
+Run the CLI tool using `main.py`. You can specify the tickers, historical data period, data interval, and an export path.
 
 ### Basic Usage
 
@@ -41,10 +46,10 @@ python main.py
 
 ### Advanced Usage
 
-Specify your own tickers and timeframe:
+Specify your own tickers, timeframe, and export the results to a CSV file:
 
 ```bash
-python main.py --tickers SOL-USD ADA-USD DOT-USD --period 1y --interval 1wk
+python main.py --tickers SOL-USD ADA-USD DOT-USD --period 1y --interval 1wk --export signals.csv
 ```
 
 ### Arguments
@@ -52,6 +57,7 @@ python main.py --tickers SOL-USD ADA-USD DOT-USD --period 1y --interval 1wk
 - `--tickers`: A space-separated list of cryptocurrency symbols (e.g., `BTC-USD`, `XRP-USD`).
 - `--period`: The duration of historical data to analyze (e.g., `1mo`, `3mo`, `6mo`, `1y`).
 - `--interval`: The timeframe interval between data points (e.g., `1h`, `1d`, `1wk`).
+- `--export`: File path to export the results as CSV (e.g., `results.csv`).
 
 ## Testing
 
@@ -63,8 +69,8 @@ python -m pytest tests/
 
 ## Strategy Logic Overview
 
-- **Bullish / Buy**: RSI is in an uptrend (40-70), MACD is above its signal line, and the closing price is above the 20 SMA.
-- **Bearish / Sell**: RSI is in a downtrend (30-60), MACD is below its signal line, and the closing price is below the 20 SMA.
+- **Bullish / Buy**: RSI is in an uptrend (40-70), MACD is above its signal line, and the closing price is above the 20 EMA.
+- **Bearish / Sell**: RSI is in a downtrend (30-60), MACD is below its signal line, and the closing price is below the 20 EMA.
 - **Strong Signals**: Extreme overbought (RSI > 70) or oversold (RSI < 30) conditions combined with MACD reversals generate strong buy/sell signals.
 
 ## License

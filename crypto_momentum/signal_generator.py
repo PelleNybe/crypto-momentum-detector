@@ -7,7 +7,7 @@ class SignalGenerator:
 
         Args:
             data (pd.DataFrame): Dataframe that should include 'RSI_14', 'MACD', 'MACD_Signal',
-                                 'SMA_20', 'SMA_50' and 'Close'.
+                                 'SMA_20', 'SMA_50', 'EMA_20', 'EMA_50', 'ATR_14' and 'Close'.
         """
         self.data = data
 
@@ -24,7 +24,7 @@ class SignalGenerator:
 
         df = self.data.copy()
 
-        required_cols = ['RSI_14', 'MACD', 'MACD_Signal', 'SMA_20', 'SMA_50', 'Close', 'BB_High', 'BB_Low']
+        required_cols = ['RSI_14', 'MACD', 'MACD_Signal', 'SMA_20', 'SMA_50', 'EMA_20', 'EMA_50', 'ATR_14', 'Close', 'BB_High', 'BB_Low']
         if not all(col in df.columns for col in required_cols):
             # If indicators are missing, default to HOLD
             df['Signal'] = 'HOLD'
@@ -38,11 +38,12 @@ class SignalGenerator:
         macd_signal = df['MACD_Signal']
         close = df['Close']
         sma_20 = df['SMA_20']
+        ema_20 = df['EMA_20']
         bb_low = df['BB_Low']
         bb_high = df['BB_High']
 
-        is_bullish = (rsi > 40) & (rsi < 70) & (macd > macd_signal) & (close > sma_20)
-        is_bearish = (rsi < 60) & (rsi > 30) & (macd < macd_signal) & (close < sma_20)
+        is_bullish = (rsi > 40) & (rsi < 70) & (macd > macd_signal) & (close > ema_20)
+        is_bearish = (rsi < 60) & (rsi > 30) & (macd < macd_signal) & (close < ema_20)
 
         strong_buy_cond = (rsi < 30) & (macd > macd_signal) & (close < bb_low)
         strong_sell_cond = (rsi > 70) & (macd < macd_signal) & (close > bb_high)
@@ -86,6 +87,9 @@ class SignalGenerator:
             'MACD_Signal': latest['MACD_Signal'],
             'SMA_20': latest['SMA_20'],
             'SMA_50': latest['SMA_50'],
+            'EMA_20': latest.get('EMA_20', 0),
+            'EMA_50': latest.get('EMA_50', 0),
+            'ATR_14': latest.get('ATR_14', 0),
             'BB_High': latest['BB_High'],
             'BB_Low': latest['BB_Low'],
             'Action': latest['Signal']
