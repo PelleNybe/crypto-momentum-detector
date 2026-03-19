@@ -1,7 +1,7 @@
 import pandas as pd
 from ta.momentum import RSIIndicator
-from ta.trend import MACD, SMAIndicator
-from ta.volatility import BollingerBands
+from ta.trend import MACD, SMAIndicator, EMAIndicator
+from ta.volatility import BollingerBands, AverageTrueRange
 
 class MomentumIndicators:
     def __init__(self, data: pd.DataFrame):
@@ -22,12 +22,16 @@ class MomentumIndicators:
                           - RSI_14
                           - MACD, MACD_Signal, MACD_Hist
                           - SMA_20, SMA_50
+                          - EMA_20, EMA_50
+                          - ATR_14
         """
         if self.data is None or self.data.empty or 'Close' not in self.data.columns:
             return self.data
 
         df = self.data.copy()
         close = df['Close']
+        high = df.get('High', df['Close'])
+        low = df.get('Low', df['Close'])
 
         # 1. Relative Strength Index (RSI) - standard 14 period
         rsi = RSIIndicator(close=close, window=14)
@@ -51,5 +55,16 @@ class MomentumIndicators:
         df['BB_High'] = bollinger.bollinger_hband()
         df['BB_Low'] = bollinger.bollinger_lband()
         df['BB_Mid'] = bollinger.bollinger_mavg()
+
+        # 5. Exponential Moving Averages (EMA) - 20 and 50 period
+        ema_20 = EMAIndicator(close=close, window=20)
+        df['EMA_20'] = ema_20.ema_indicator()
+
+        ema_50 = EMAIndicator(close=close, window=50)
+        df['EMA_50'] = ema_50.ema_indicator()
+
+        # 6. Average True Range (ATR) - standard 14 period
+        atr = AverageTrueRange(high=high, low=low, close=close, window=14)
+        df['ATR_14'] = atr.average_true_range()
 
         return df
