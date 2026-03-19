@@ -23,56 +23,41 @@ class SignalGenerator:
             return pd.DataFrame()
 
         df = self.data.copy()
-        signals = []
 
-        required_cols = ['RSI_14', 'MACD', 'MACD_Signal', 'SMA_20', 'SMA_50', 'Close']
+        required_cols = ['RSI_14', 'MACD', 'MACD_Signal', 'SMA_20', 'SMA_50', 'Close', 'BB_High', 'BB_Low']
         if not all(col in df.columns for col in required_cols):
             # If indicators are missing, default to HOLD
             df['Signal'] = 'HOLD'
             return df
 
-        for i in range(len(df)):
-            # Skip rows where moving averages aren't available yet
-            if pd.isna(df['SMA_50'].iloc[i]):
-                signals.append('HOLD')
-                continue
+        # Filter out rows where moving averages aren't available yet
+        valid_mask = df['SMA_50'].notna()
 
-            rsi = df['RSI_14'].iloc[i]
-            macd = df['MACD'].iloc[i]
-            macd_signal = df['MACD_Signal'].iloc[i]
-            close = df['Close'].iloc[i]
-            sma_20 = df['SMA_20'].iloc[i]
-            sma_50 = df['SMA_50'].iloc[i]
+        rsi = df['RSI_14']
+        macd = df['MACD']
+        macd_signal = df['MACD_Signal']
+        close = df['Close']
+        sma_20 = df['SMA_20']
+        bb_low = df['BB_Low']
+        bb_high = df['BB_High']
 
-            # Simplified Momentum Strategy Logic:
+        is_bullish = (rsi > 40) & (rsi < 70) & (macd > macd_signal) & (close > sma_20)
+        is_bearish = (rsi < 60) & (rsi > 30) & (macd < macd_signal) & (close < sma_20)
 
-            # 1. Bullish conditions:
-            # - RSI is recovering from oversold (RSI > 30) or showing strong momentum (RSI > 50)
-            # - MACD crossed above Signal line (MACD > Signal)
-            # - Short-term trend is up (Price > SMA 20 or SMA 20 > SMA 50)
-            is_bullish = (rsi > 40 and rsi < 70) and (macd > macd_signal) and (close > sma_20)
+        strong_buy_cond = (rsi < 30) & (macd > macd_signal) & (close < bb_low)
+        strong_sell_cond = (rsi > 70) & (macd < macd_signal) & (close > bb_high)
 
-            # 2. Bearish conditions:
-            # - RSI is overbought (RSI > 70) or showing weak momentum (RSI < 50)
-            # - MACD crossed below Signal line (MACD < Signal)
-            # - Short-term trend is down (Price < SMA 20 or SMA 20 < SMA 50)
-            is_bearish = (rsi < 60 and rsi > 30) and (macd < macd_signal) and (close < sma_20)
+        # Initialize all signals as 'HOLD'
+        df['Signal'] = 'HOLD'
 
-            # Extreme Oversold/Overbought overrides
-            if rsi < 30 and macd > macd_signal:
-                # Strong buy signal on reversal
-                signals.append('STRONG BUY')
-            elif rsi > 70 and macd < macd_signal:
-                # Strong sell signal on reversal
-                signals.append('STRONG SELL')
-            elif is_bullish:
-                signals.append('BUY')
-            elif is_bearish:
-                signals.append('SELL')
-            else:
-                signals.append('HOLD')
+        # We apply conditions
+        df.loc[valid_mask & is_bullish, 'Signal'] = 'BUY'
+        df.loc[valid_mask & is_bearish, 'Signal'] = 'SELL'
 
-        df['Signal'] = signals
+        # Extreme Oversold/Overbought overrides
+        df.loc[valid_mask & strong_buy_cond, 'Signal'] = 'STRONG BUY'
+        df.loc[valid_mask & strong_sell_cond, 'Signal'] = 'STRONG SELL'
+
         return df
 
     def get_latest_signal(self) -> dict:
@@ -101,5 +86,7 @@ class SignalGenerator:
             'MACD_Signal': latest['MACD_Signal'],
             'SMA_20': latest['SMA_20'],
             'SMA_50': latest['SMA_50'],
+            'BB_High': latest['BB_High'],
+            'BB_Low': latest['BB_Low'],
             'Action': latest['Signal']
         }

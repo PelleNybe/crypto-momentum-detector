@@ -51,6 +51,7 @@ def main():
     table.add_column("Price (USD)", justify="right")
     table.add_column("RSI (14)", justify="right")
     table.add_column("MACD", justify="right")
+    table.add_column("BB (L-H)", justify="center")
     table.add_column("Signal", justify="center")
 
     for ticker in tickers:
@@ -96,6 +97,7 @@ def main():
                 f"${latest['Price']:.2f}",
                 rsi_str,
                 macd_str,
+                f"${latest['BB_Low']:.0f} - ${latest['BB_High']:.0f}",
                 signal_str
             )
 
