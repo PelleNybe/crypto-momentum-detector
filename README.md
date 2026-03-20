@@ -1,144 +1,247 @@
 <div align="center">
 
-# 🚀 Crypto Momentum Detector 📈
+# <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Rocket.png" alt="Rocket" width="45" height="45" /> Crypto Momentum Detector <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Roller%20Coaster.png" alt="Roller Coaster" width="45" height="45" />
 
-[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg)]()
+<br/>
+
+[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg?style=for-the-badge&logo=python)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge&logo=opensourceinitiative)](https://opensource.org/licenses/MIT)
+[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge&logo=python)](https://github.com/psf/black)
+[![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg?style=for-the-badge&logo=github)]()
+[![Built with ❤️](https://img.shields.io/badge/Built_with-❤️-ff69b4.svg?style=for-the-badge)](https://github.com/PelleNybe)
+
+<br/>
+<br/>
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%">
 
-**A powerful CLI tool to analyze cryptocurrency momentum, calculate technical indicators, and generate actionable trading signals.**
+<br/>
 
-<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMjM1YzlkOGU4MjM2ZjY4ZjY4YmRjYzE2ZDZlNzY1MWRkODMwMjJjZiZlcD12MV9pbnRlcm5hbF9naWZzX2dpZklkJmN0PWc/JtBZm3Getg3dqxEX1E/giphy.gif" width="400" alt="Crypto Trading Animation">
+<h2><b>⚡ A powerful, blazing-fast CLI tool to analyze cryptocurrency momentum, calculate technical indicators, and generate actionable trading signals! ⚡</b></h2>
+
+<br/>
+
+<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMjM1YzlkOGU4MjM2ZjY4ZjY4YmRjYzE2ZDZlNzY1MWRkODMwMjJjZiZlcD12MV9pbnRlcm5hbF9naWZzX2dpZklkJmN0PWc/JtBZm3Getg3dqxEX1E/giphy.gif" width="500" alt="Crypto Trading Animation" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
 
 </div>
 
+<br/>
+<br/>
+
+## 🌟 Discover the Future of Trading Analysis
+
+Welcome to the **Crypto Momentum Detector**. Built for traders, developers, and crypto enthusiasts who demand **speed**, **precision**, and **beautiful aesthetics** in their terminal.
+
+Whether you're a day trader hunting for quick setups or an investor looking for macro trend confirmations, this tool equips you with the heavy-lifting technical analysis so you can focus on executing winning strategies.
+
 ---
 
-## ✨ Features
+## 🚀 Key Features
 
-- 📊 **Historical Data Fetching**: Retrieves Open, High, Low, Close, and Volume data for any supported cryptocurrency pair (e.g., BTC-USD, ETH-USD) using `yfinance`.
-- ⚡ **Concurrent Execution**: Analyzes multiple tickers in parallel using `ThreadPoolExecutor` for optimal performance.
-- 📉 **Technical Indicators**: Calculates crucial indicators using the `ta` library:
-  - 🔸 Relative Strength Index (RSI - 14 periods)
-  - 🔸 Moving Average Convergence Divergence (MACD)
-  - 🔸 Simple Moving Averages (SMA - 20 and 50 periods)
-  - 🔸 Exponential Moving Averages (EMA - 20 and 50 periods)
-  - 🔸 Average True Range (ATR - 14 periods)
-  - 🔸 Bollinger Bands
-- 🎯 **Signal Generation**: Evaluates indicators to output precise trading signals: `BUY`, `SELL`, `HOLD`, `STRONG BUY`, and `STRONG SELL`.
-- 🛠️ **Customizable Strategies**: Adjust RSI thresholds for buying and selling signals directly from the command line.
-- ⏪ **Advanced Backtesting Module**: Simulate trading based on historical signals to calculate realistic returns over a specified period, accounting for fees, slippage, max drawdown, and win rates.
-- 🎨 **Rich CLI Output**: Beautifully formatted terminal tables using the `rich` library to present findings clearly, complete with progress bars, visual sparklines, portfolio summary metrics, and trading recommendations panels.
-- 💾 **Parquet Caching**: Implements local Parquet file caching for robust, ultra-fast historical and MTF data loads to prevent rate limiting.
-- 🛡️ **Risk Management Metrics**: Calculates and exposes ATR-based Stop Loss (SL) and Take Profit (TP) levels directly in the terminal output to make signals instantly actionable.
-- 🗺️ **Multi-Timeframe Analysis (MTF)**: Validates generated signals against higher timeframe trend directions for confirmation.
-- 📝 **Data Export**: Export your momentum analysis, risk metrics, and backtesting results to a CSV file for tracking and further analysis.
+*   **📊 Historic & Real-Time Data**: Harness the power of `yfinance` to pull Open, High, Low, Close, and Volume data for *any* supported cryptocurrency pair (e.g., BTC-USD, ETH-USD, SOL-USD).
+*   **⚡ Blazing Fast Concurrency**: Say goodbye to waiting. We use Python's `ThreadPoolExecutor` to analyze multiple tickers simultaneously.
+*   **🧠 Advanced Technical Indicators**: Powered by the robust `ta` library, it calculates:
+    *   **RSI** (Relative Strength Index) - 14 periods
+    *   **MACD** (Moving Average Convergence Divergence)
+    *   **SMA & EMA** (Simple and Exponential Moving Averages) - 20 & 50 periods
+    *   **ATR** (Average True Range) - 14 periods
+    *   **Bollinger Bands**
+*   **🎯 Intelligent Signal Generation**: Get clear, un-biased trading recommendations: `BUY`, `SELL`, `HOLD`, `STRONG BUY`, and `STRONG SELL`.
+*   **🛡️ Dynamic Risk Management**: Never trade without a plan. Our engine automatically calculates ATR-based **Stop Loss (SL)** and **Take Profit (TP)** levels for every actionable setup.
+*   **🗺️ Multi-Timeframe (MTF) Analysis**: Enable this feature to validate short-term signals against macro trends. Don't trade against the big guys!
+*   **⏪ Backtesting Engine**: Test your theories before risking capital. Run simulations over historical data with customizable RSI thresholds and see detailed performance metrics (Win Rate, Max Drawdown, Return).
+*   **💾 Smart Parquet Caching**: Ultra-fast local caching using `pyarrow`/`fastparquet` to eliminate redundant API calls and prevent rate-limiting.
+*   **🎨 Stunning CLI Output**: Powered by `rich`, experience a terminal like never before with progress bars, color-coded tables, sparkline charts, and portfolio summaries.
+*   **📝 Export & Integrate**: Export all momentum analysis, risk metrics, and signals to a clean `.csv` file for external spreadsheet analysis or bot integration.
+
+---
+
+<div align="center">
+  <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%">
+</div>
+
+<br/>
+
+## 📸 System In Action
+
+<div align="center">
+
+*Experience the beautifully crafted terminal interface built with `rich`.*
+
+<pre style="text-align: left; background-color: #1e1e1e; color: #d4d4d4; padding: 20px; border-radius: 8px; font-family: monospace; font-size: 13px; line-height: 1.5;">
+<span style="color: #569cd6;">╭───────────────── Settings ─────────────────╮</span>
+<span style="color: #569cd6;">│</span> Crypto Momentum Detector                   <span style="color: #569cd6;">│</span>
+<span style="color: #569cd6;">│</span> Analyzing: 2 assets                        <span style="color: #569cd6;">│</span>
+<span style="color: #569cd6;">│</span> Period: 6mo | Interval: 1d | MTF: Disabled <span style="color: #569cd6;">│</span>
+<span style="color: #569cd6;">╰────────────────────────────────────────────╯</span>
+  Analyzing assets... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00
+<span style="color: #ce9178;">╭──────────────────────────── 📊 Portfolio Summary ────────────────────────────╮</span>
+<span style="color: #ce9178;">│</span> Highest RSI: ETH-USD (51.0), BTC-USD (48.6)                                  <span style="color: #ce9178;">│</span>
+<span style="color: #ce9178;">│</span> Lowest RSI: BTC-USD (48.6), ETH-USD (51.0)                                   <span style="color: #ce9178;">│</span>
+<span style="color: #ce9178;">│</span> Top MACD Momentum: BTC-USD, ETH-USD                                          <span style="color: #ce9178;">│</span>
+<span style="color: #ce9178;">╰──────────────────────────────────────────────────────────────────────────────╯</span>
+<span style="color: #4ec9b0;">╭───────────────────── 🎯 Trading Action Recommendations ──────────────────────╮</span>
+<span style="color: #4ec9b0;">│</span> 📈 BUY: 1 assets (ETH-USD) show favorable entry conditions.                  <span style="color: #4ec9b0;">│</span>
+<span style="color: #4ec9b0;">│</span> ⏳ HOLD: 1 assets (BTC-USD) have neutral or conflicting momentum.            <span style="color: #4ec9b0;">│</span>
+<span style="color: #4ec9b0;">╰──────────────────────────────────────────────────────────────────────────────╯</span>
+</pre>
+
+*(Note: Terminal tables include sparklines, exact risk levels, and color-coded signals)*
+
+</div>
+
+<br/>
+
+<div align="center">
+  <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%">
+</div>
 
 ---
 
 ## 🛠️ Installation
 
-Ensure you have Python 3.8+ installed.
+Get up and running in less than 2 minutes! Ensure you have **Python 3.8+** installed.
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/PelleNybe/crypto-momentum-detector.git
-   cd crypto-momentum-detector
-   ```
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/PelleNybe/crypto-momentum-detector.git
+    cd crypto-momentum-detector
+    ```
 
-2. **Install the required dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+2.  **Install the required dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+*(Optional but recommended): Install caching engines for 10x faster subsequent runs:*
+```bash
+pip install pyarrow fastparquet
+```
 
 ---
 
-## 🚀 Usage
+## 💻 Usage & Commands
 
-Run the CLI tool using `main.py`. You can specify the tickers, historical data period, data interval, and an export path.
+Run the CLI tool using `main.py`. The tool is highly flexible and parameter-driven.
 
-### 🟢 Basic Usage
-
+### 🟢 Quick Start (The Default Run)
 Analyze the default tickers (BTC-USD, ETH-USD) with default settings (6 months period, 1 day interval):
-
 ```bash
 python main.py
 ```
 
-### 🟠 Advanced Usage
-
-Specify your own tickers, timeframe, and export the results to a CSV file, utilizing MTF analysis:
-
+### 🟠 Advanced Power User
+Specify your own basket of altcoins, set the timeframe, export the results to a CSV, and utilize MTF analysis for maximum accuracy:
 ```bash
 python main.py --tickers SOL-USD ADA-USD DOT-USD --period 1y --interval 1wk --use-mtf --export signals.csv
 ```
 
-### 🟣 Backtesting and Custom Strategies
-
-Run a backtest on historical data to see how the strategy would have performed, and tweak parameters:
-
+### 🟣 Strategy Backtesting
+Want to know if your strategy actually works? Run a historical backtest and see detailed performance metrics:
 ```bash
-python main.py --backtest --period 1y --rsi-buy-min 35 --rsi-strong-buy 25
+python main.py --backtest --period 1y --tickers BTC-USD
 ```
 
 ---
 
-## ⚙️ Configuration & Arguments
+## ⚙️ Configuration Glossary
 
 <details>
-<summary><b>Click to expand available arguments</b></summary>
+<summary><b>🔥 Click to reveal all available CLI arguments 🔥</b></summary>
 <br>
 
-- `--tickers`: A space-separated list of cryptocurrency symbols (e.g., `BTC-USD`, `XRP-USD`).
-- `--period`: The duration of historical data to analyze (e.g., `1mo`, `3mo`, `6mo`, `1y`).
-- `--interval`: The timeframe interval between data points (e.g., `1h`, `1d`, `1wk`).
-- `--export`: File path to export the results as CSV (e.g., `results.csv`).
-- `--backtest`: Runs a historical backtest and displays detailed performance metrics.
-- `--use-mtf`: Enables Multi-Timeframe analysis to confirm signals against higher timeframes.
-- `--rsi-buy-min`: Minimum RSI for a regular buy signal (Default: 40).
-- `--rsi-buy-max`: Maximum RSI for a regular buy signal (Default: 70).
-- `--rsi-sell-min`: Minimum RSI for a regular sell signal (Default: 30).
-- `--rsi-sell-max`: Maximum RSI for a regular sell signal (Default: 60).
-- `--rsi-strong-buy`: RSI threshold for a strong buy signal (Default: 30).
-- `--rsi-strong-sell`: RSI threshold for a strong sell signal (Default: 70).
+| Argument | Description | Example |
+| :--- | :--- | :--- |
+| `--tickers` | Space-separated list of cryptocurrency symbols | `--tickers BTC-USD XRP-USD SOL-USD` |
+| `--period` | Historical data period to fetch (`1mo`, `3mo`, `6mo`, `1y`, `max`) | `--period 1y` |
+| `--interval` | Timeframe interval between data points (`1h`, `1d`, `1wk`) | `--interval 1d` |
+| `--export` | File path to export the detailed results as a CSV | `--export my_trades.csv` |
+| `--backtest` | Flag to run a historical backtest and display performance | `--backtest` |
+| `--use-mtf` | Flag to enable Multi-Timeframe analysis to confirm macro trends | `--use-mtf` |
+
+</details>
+
+<br/>
+
+## 🧠 Behind the Scenes: Strategy Logic
+
+<details>
+<summary><b>📈 Click to dive into the trading engine logic 📉</b></summary>
+<br>
+
+*   **📈 Bullish / Buy Setup**:
+    *   RSI is rising (between default 40-70).
+    *   MACD is above its signal line (momentum shift).
+    *   Closing price is above the 20 EMA (short-term uptrend).
+    *   *(If `--use-mtf` is active)*: The higher timeframe trend is also definitively bullish.
+*   **📉 Bearish / Sell Setup**:
+    *   RSI is falling (between default 30-60).
+    *   MACD is below its signal line.
+    *   Closing price is below the 20 EMA.
+    *   *(If `--use-mtf` is active)*: The higher timeframe trend is bearish.
+*   **💥 Extreme Signals (Strong Buy / Sell)**: Extreme overbought (RSI > 70) or oversold (RSI < 30) conditions combined with sharp MACD reversals.
+*   **🛡️ Dynamic Risk Calculation**: Take Profit (TP) and Stop Loss (SL) levels aren't guessed. They are mathematically scaled based on the **Average True Range (ATR)** relative to the current closing price, providing a volatility-adjusted dynamic risk profile for every generated setup.
 
 </details>
 
 ---
 
-## 🧠 Strategy Logic Overview
+## 🧪 Testing and Reliability
 
-<details>
-<summary><b>Click to dive into the trading logic</b></summary>
-<br>
-
-- **📈 Bullish / Buy**: RSI is in an uptrend (default 40-70), MACD is above its signal line, closing price is above the 20 EMA, and (if `--use-mtf` is active) the higher timeframe trend is bullish.
-- **📉 Bearish / Sell**: RSI is in a downtrend (default 30-60), MACD is below its signal line, closing price is below the 20 EMA, and (if `--use-mtf` is active) the higher timeframe trend is bearish.
-- **💥 Strong Signals**: Extreme overbought (default RSI > 70) or oversold (default RSI < 30) conditions combined with MACD reversals generate strong buy/sell signals.
-- **🛡️ Risk Management**: Take Profit and Stop Loss figures are scaled based on the Average True Range (ATR) relative to the closing price, providing a dynamic risk profile for every generated setup.
-
-</details>
-
----
-
-## 🧪 Testing
-
-This project uses `pytest` for unit testing. To run the tests, execute:
+We believe in robust code. This project uses `pytest` for unit testing, including mocked API responses to ensure the logic remains sound without hitting external rate limits.
 
 ```bash
+# Run the test suite
 python -m pytest tests/
 ```
 
 ---
 
-## 📝 License
-
-See the `LICENSE` file for details.
+<br/>
 
 <div align="center">
   <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%">
-  <p><i>Made with ❤️ by the Crypto Momentum Detector Team</i></p>
+</div>
+
+## 👨‍💻 Meet the Developer & The Company
+
+<div align="center">
+
+### **Pelle Nyberg**
+*Visionary Software Engineer & Quantitative Developer*
+
+[![GitHub Badge](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/PelleNybe)
+[![LinkedIn Badge](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/pellenyberg/)
+[![Website Badge](https://img.shields.io/badge/Portfolio-000000?style=for-the-badge&logo=About.me&logoColor=white)](https://pellenybe.github.io)
+[![Project](https://img.shields.io/badge/Crypto_Project-FF9900?style=for-the-badge&logo=bitcoin&logoColor=white)](https://cryptop.coraxcolab.com)
+
+With a deep passion for financial markets, algorithmic trading, and cutting-edge software architecture, Pelle bridges the gap between complex quantitative analysis and beautifully engineered, user-centric tools.
+
+<br/>
+<br/>
+
+<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Briefcase.png" alt="Briefcase" width="45" height="45" />
+
+### **Corax CoLAB**
+*Innovating the Future of Digital Solutions*
+
+[![Website Badge](https://img.shields.io/badge/Corax_CoLAB-1E1E1E?style=for-the-badge&logo=React&logoColor=61DAFB)](https://coraxcolab.com)
+
+At **Corax CoLAB**, we build scalable, high-performance software solutions. From robust trading algorithms and data pipelines to full-stack web applications, Corax CoLAB is dedicated to pushing the boundaries of what technology can achieve. Visit us to see how we are shaping the future.
+
+</div>
+
+<div align="center">
+  <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%">
+</div>
+
+## 📜 License
+
+This project is open-sourced software licensed under the **[MIT License](LICENSE)**.
+
+<br/>
+
+<div align="center">
+  <i>"In trading, vision is everything. In development, execution is everything."</i><br/>
+  <b>Made with <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Beating%20Heart.png" alt="Beating Heart" width="20" height="20" /> by Pelle Nyberg @ Corax CoLAB</b>
 </div>
