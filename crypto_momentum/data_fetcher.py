@@ -7,8 +7,11 @@ import time
 from datetime import datetime, timedelta
 from crypto_momentum.mtf_utils import get_htf_interval, get_htf_period
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
+
 
 class DataFetcher:
     def __init__(self, ticker_symbol: str = "BTC-USD", cache_dir: str = ".data_cache"):
@@ -17,15 +20,21 @@ class DataFetcher:
         """
         self.ticker_symbol = ticker_symbol
         self.cache_dir = cache_dir
-        self.session = requests_cache.CachedSession('.yfinance_cache', expire_after=3600)
+        self.session = requests_cache.CachedSession(
+            ".yfinance_cache", expire_after=3600
+        )
 
         if not os.path.exists(self.cache_dir):
             os.makedirs(self.cache_dir)
 
     def _get_cache_path(self, period: str, interval: str) -> str:
-        return os.path.join(self.cache_dir, f"{self.ticker_symbol}_{period}_{interval}.parquet")
+        return os.path.join(
+            self.cache_dir, f"{self.ticker_symbol}_{period}_{interval}.parquet"
+        )
 
-    def fetch_historical_data(self, period: str = "6mo", interval: str = "1d", max_cache_age_hours: int = 1) -> pd.DataFrame:
+    def fetch_historical_data(
+        self, period: str = "6mo", interval: str = "1d", max_cache_age_hours: int = 1
+    ) -> pd.DataFrame:
         """
         Fetches historical market data with file-based Parquet caching.
         """
@@ -37,14 +46,20 @@ class DataFetcher:
             cache_age = datetime.now().timestamp() - file_mod_time
 
             if cache_age < max_cache_age_hours * 3600:
-                logger.info(f"Loading {period}/{interval} for {self.ticker_symbol} from local Parquet cache")
+                logger.info(
+                    f"Loading {period}/{interval} for {self.ticker_symbol} from local Parquet cache"
+                )
                 try:
                     df = pd.read_parquet(cache_path)
                     return df
                 except Exception as e:
-                    logger.warning(f"Failed to load cache for {self.ticker_symbol}: {e}")
+                    logger.warning(
+                        f"Failed to load cache for {self.ticker_symbol}: {e}"
+                    )
 
-        logger.info(f"Fetching {period} of data with {interval} interval for {self.ticker_symbol} from API")
+        logger.info(
+            f"Fetching {period} of data with {interval} interval for {self.ticker_symbol} from API"
+        )
         try:
             ticker = yf.Ticker(self.ticker_symbol)
             df = ticker.history(period=period, interval=interval)
@@ -53,14 +68,18 @@ class DataFetcher:
                 logger.warning(f"No data returned for {self.ticker_symbol}.")
                 return pd.DataFrame()
 
-            if all(col in df.columns for col in ['Open', 'High', 'Low', 'Close', 'Volume']):
-                result_df = df[['Open', 'High', 'Low', 'Close', 'Volume']]
+            if all(
+                col in df.columns for col in ["Open", "High", "Low", "Close", "Volume"]
+            ):
+                result_df = df[["Open", "High", "Low", "Close", "Volume"]]
 
                 # Save to cache
                 try:
                     result_df.to_parquet(cache_path)
                 except Exception as e:
-                    logger.warning(f"Failed to write cache for {self.ticker_symbol}: {e}")
+                    logger.warning(
+                        f"Failed to write cache for {self.ticker_symbol}: {e}"
+                    )
 
                 return result_df
             else:
@@ -71,7 +90,9 @@ class DataFetcher:
             logger.error(f"Error fetching data for {self.ticker_symbol}: {e}")
             return pd.DataFrame()
 
-    def fetch_htf_data(self, period: str, interval: str, max_cache_age_hours: int = 1) -> pd.DataFrame:
+    def fetch_htf_data(
+        self, period: str, interval: str, max_cache_age_hours: int = 1
+    ) -> pd.DataFrame:
         """
         Fetches data for a higher timeframe with caching.
         """
@@ -79,8 +100,10 @@ class DataFetcher:
         htf_period = get_htf_period(period)
 
         if not htf_interval:
-             logger.info(f"No higher timeframe mapping for {interval}, returning empty df for HTF")
-             return pd.DataFrame()
+            logger.info(
+                f"No higher timeframe mapping for {interval}, returning empty df for HTF"
+            )
+            return pd.DataFrame()
 
         cache_path = self._get_cache_path(htf_period, htf_interval)
 
@@ -90,23 +113,29 @@ class DataFetcher:
             cache_age = datetime.now().timestamp() - file_mod_time
 
             if cache_age < max_cache_age_hours * 3600:
-                logger.info(f"Loading HTF {htf_period}/{htf_interval} for {self.ticker_symbol} from cache")
+                logger.info(
+                    f"Loading HTF {htf_period}/{htf_interval} for {self.ticker_symbol} from cache"
+                )
                 try:
                     df = pd.read_parquet(cache_path)
                     return df
                 except Exception as e:
                     pass
 
-        logger.info(f"Fetching HTF data: {htf_period} with {htf_interval} for {self.ticker_symbol} from API")
+        logger.info(
+            f"Fetching HTF data: {htf_period} with {htf_interval} for {self.ticker_symbol} from API"
+        )
         try:
             ticker = yf.Ticker(self.ticker_symbol)
             df = ticker.history(period=htf_period, interval=htf_interval)
 
             if df.empty:
-                 return pd.DataFrame()
+                return pd.DataFrame()
 
-            if all(col in df.columns for col in ['Open', 'High', 'Low', 'Close', 'Volume']):
-                result_df = df[['Open', 'High', 'Low', 'Close', 'Volume']]
+            if all(
+                col in df.columns for col in ["Open", "High", "Low", "Close", "Volume"]
+            ):
+                result_df = df[["Open", "High", "Low", "Close", "Volume"]]
                 try:
                     result_df.to_parquet(cache_path)
                 except Exception:
@@ -115,5 +144,5 @@ class DataFetcher:
             else:
                 return pd.DataFrame()
         except Exception as e:
-             logger.error(f"Error fetching HTF data for {self.ticker_symbol}: {e}")
-             return pd.DataFrame()
+            logger.error(f"Error fetching HTF data for {self.ticker_symbol}: {e}")
+            return pd.DataFrame()
