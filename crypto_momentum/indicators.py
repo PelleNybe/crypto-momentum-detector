@@ -4,26 +4,20 @@ from ta.trend import MACD, SMAIndicator, EMAIndicator
 from ta.volatility import BollingerBands, AverageTrueRange
 
 class MomentumIndicators:
-    def __init__(self, data: pd.DataFrame):
+    def __init__(self, data: pd.DataFrame, htf_data: pd.DataFrame = None):
         """
         Initializes the indicators with OHLCV data.
 
         Args:
             data (pd.DataFrame): Data containing at least a 'Close' column.
+            htf_data (pd.DataFrame): Optional higher timeframe data.
         """
         self.data = data
+        self.htf_data = htf_data
 
     def calculate_all(self) -> pd.DataFrame:
         """
         Calculates a suite of momentum and trend indicators.
-
-        Returns:
-            pd.DataFrame: A copy of the input DataFrame with new columns for:
-                          - RSI_14
-                          - MACD, MACD_Signal, MACD_Hist
-                          - SMA_20, SMA_50
-                          - EMA_20, EMA_50
-                          - ATR_14
         """
         if self.data is None or self.data.empty or 'Close' not in self.data.columns:
             return self.data
@@ -66,5 +60,49 @@ class MomentumIndicators:
         # 6. Average True Range (ATR) - standard 14 period
         atr = AverageTrueRange(high=high, low=low, close=close, window=14)
         df['ATR_14'] = atr.average_true_range()
+
+        # Calculate HTF indicators if HTF data exists
+        if self.htf_data is not None and not self.htf_data.empty and 'Close' in self.htf_data.columns:
+            htf_df = self.htf_data.copy()
+
+            htf_close = htf_df['Close']
+
+            htf_sma_20 = SMAIndicator(close=htf_close, window=20)
+            htf_df['SMA_20'] = htf_sma_20.sma_indicator()
+
+            htf_sma_50 = SMAIndicator(close=htf_close, window=50)
+            htf_df['SMA_50'] = htf_sma_50.sma_indicator()
+
+            # Simple trend identification on HTF: SMA 20 > SMA 50
+            htf_df['HTF_Trend'] = htf_df['SMA_20'] > htf_df['SMA_50']
+
+            # Since index is dates, we want to align HTF trend with the lower timeframe
+            # Forward fill the HTF values to the LTF index
+            # Align the HTF trend by reindexing and forward filling
+
+            # Extract just the trend column
+            htf_trend_series = htf_df[['HTF_Trend']].copy()
+
+            # Ensure timezones match if both have them, or remove them
+            if df.index.tz is not None and htf_trend_series.index.tz is not None:
+                 if df.index.tz != htf_trend_series.index.tz:
+                      htf_trend_series.index = htf_trend_series.index.tz_convert(df.index.tz)
+            elif df.index.tz is not None and htf_trend_series.index.tz is None:
+                 htf_trend_series.index = htf_trend_series.index.tz_localize(df.index.tz)
+            elif df.index.tz is None and htf_trend_series.index.tz is not None:
+                 df.index = df.index.tz_localize(htf_trend_series.index.tz)
+
+            # Merge HTF trend into df
+            try:
+                # Merge using merge_asof requires sorted indices
+                df = df.sort_index()
+                htf_trend_series = htf_trend_series.sort_index()
+                df = pd.merge_asof(df, htf_trend_series, left_index=True, right_index=True, direction='backward')
+                df['HTF_Trend'] = df['HTF_Trend'].fillna(True)
+            except Exception as e:
+                print(f"Error merging HTF data: {e}")
+                df['HTF_Trend'] = True
+        else:
+            df['HTF_Trend'] = True  # Default to true if no HTF data available
 
         return df
