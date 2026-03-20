@@ -1,19 +1,8 @@
-<div align="center">
+# ⚡ Crypto Momentum Detector
 
-# <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Rocket.png" alt="Rocket" width="45" height="45" /> Crypto Momentum Detector <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Roller%20Coaster.png" alt="Roller Coaster" width="45" height="45" />
-
-<br/>
-
-[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg?style=for-the-badge&logo=python)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge&logo=opensourceinitiative)](https://opensource.org/licenses/MIT)
-[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge&logo=python)](https://github.com/psf/black)
-[![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg?style=for-the-badge&logo=github)]()
-[![Built with ❤️](https://img.shields.io/badge/Built_with-❤️-ff69b4.svg?style=for-the-badge)](https://github.com/PelleNybe)
-
-[![CI Status](https://img.shields.io/github/actions/workflow/status/PelleNybe/crypto-momentum-detector/ci.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/PelleNybe/crypto-momentum-detector/actions)
-[![Forks](https://img.shields.io/github/forks/PelleNybe/crypto-momentum-detector.svg?style=for-the-badge&logo=github)](https://github.com/PelleNybe/crypto-momentum-detector/network/members)
-[![Stars](https://img.shields.io/github/stars/PelleNybe/crypto-momentum-detector.svg?style=for-the-badge&logo=github)](https://github.com/PelleNybe/crypto-momentum-detector/stargazers)
-[![Watchers](https://img.shields.io/github/watchers/PelleNybe/crypto-momentum-detector.svg?style=for-the-badge&logo=github)](https://github.com/PelleNybe/crypto-momentum-detector/watchers)
+[![Tests](https://img.shields.io/github/actions/workflow/status/PelleNybe/crypto-momentum-detector/tests.yml?branch=main&label=tests&style=for-the-badge&logo=github)](https://github.com/PelleNybe/crypto-momentum-detector/actions)
+[![Python Version](https://img.shields.io/pypi/pyversions/crypto-momentum-detector.svg?style=for-the-badge&logo=python&logoColor=white)](https://pypi.org/project/crypto-momentum-detector/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![Issues](https://img.shields.io/github/issues/PelleNybe/crypto-momentum-detector.svg?style=for-the-badge&logo=github)](https://github.com/PelleNybe/crypto-momentum-detector/issues)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge&logo=github)](http://makeapullrequest.com)
 
@@ -24,7 +13,7 @@
 
 <br/>
 
-<h2><b>⚡ A powerful, blazing-fast CLI tool to analyze cryptocurrency momentum, calculate technical indicators, and generate actionable trading signals! ⚡</b></h2>
+<h2><b>⚡ A powerful, blazing-fast application to analyze cryptocurrency momentum, calculate technical indicators, and generate actionable trading signals with a jaw-dropping UI! ⚡</b></h2>
 
 <br/>
 
@@ -37,7 +26,7 @@
 
 ## 🌟 Discover the Future of Trading Analysis
 
-Welcome to the **Crypto Momentum Detector**. Built for traders, developers, and crypto enthusiasts who demand **speed**, **precision**, and **beautiful aesthetics** in their terminal.
+Welcome to the **Crypto Momentum Detector**. Built for traders, developers, and crypto enthusiasts who demand **speed**, **precision**, and **beautiful aesthetics**.
 
 Whether you're a day trader hunting for quick setups or an investor looking for macro trend confirmations, this tool equips you with the heavy-lifting technical analysis so you can focus on executing winning strategies.
 
@@ -45,6 +34,7 @@ Whether you're a day trader hunting for quick setups or an investor looking for 
 
 ## 🚀 Key Features
 
+*   **📊 Jaw-Dropping UI**: A beautifully crafted Streamlit application featuring interactive, dynamic Plotly charts and real-time data tables.
 *   **📊 Historic & Real-Time Data**: Harness the power of `yfinance` to pull Open, High, Low, Close, and Volume data for *any* supported cryptocurrency pair (e.g., BTC-USD, ETH-USD, SOL-USD).
 *   **⚡ Blazing Fast Concurrency**: Say goodbye to waiting. We use Python's `ThreadPoolExecutor` to analyze multiple tickers simultaneously.
 *   **🧠 Advanced Technical Indicators**: Powered by the robust `ta` library, it calculates:
@@ -58,42 +48,8 @@ Whether you're a day trader hunting for quick setups or an investor looking for 
 *   **🗺️ Multi-Timeframe (MTF) Analysis**: Enable this feature to validate short-term signals against macro trends. Don't trade against the big guys!
 *   **⏪ Backtesting Engine**: Test your theories before risking capital. Run simulations over historical data with customizable RSI thresholds and see detailed performance metrics (Win Rate, Max Drawdown, Return).
 *   **💾 Smart Parquet Caching**: Ultra-fast local caching using `pyarrow`/`fastparquet` to eliminate redundant API calls and prevent rate-limiting.
-*   **🎨 Stunning CLI Output**: Powered by `rich`, experience a terminal like never before with progress bars, color-coded tables, sparkline charts, and portfolio summaries.
-*   **📝 Export & Integrate**: Export all momentum analysis, risk metrics, and signals to a clean `.csv` file for external spreadsheet analysis or bot integration.
 
 ---
-
-<div align="center">
-  <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%">
-</div>
-
-<br/>
-
-## 📸 System In Action
-
-<div align="center">
-  <p><i>Experience the beautifully crafted terminal interface built with <code>rich</code>.</i></p>
-
-  <h3>1. Default Analysis</h3>
-  <img src="docs/assets/ui_default.svg" width="100%" alt="Default Analysis">
-
-  <br><br>
-
-  <h3>2. Multi-Timeframe (MTF) Analysis</h3>
-  <img src="docs/assets/ui_mtf.svg" width="100%" alt="MTF Analysis">
-
-  <br><br>
-
-  <h3>3. Strategy Backtesting</h3>
-  <img src="docs/assets/ui_backtest.svg" width="100%" alt="Backtesting">
-
-  <br><br>
-
-  <h3>4. Portfolio Overview</h3>
-  <img src="docs/assets/ui_multiple.svg" width="100%" alt="Multiple Assets">
-</div>
-
-<br/>
 
 <div align="center">
   <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%">
@@ -123,21 +79,27 @@ pip install pyarrow fastparquet
 
 ## 💻 Usage & Commands
 
-Run the CLI tool using `main.py`. The tool is highly flexible and parameter-driven.
+Run the new beautiful Streamlit UI:
 
-### 🟢 Quick Start (The Default Run)
+```bash
+streamlit run app.py
+```
+
+You can still run the CLI tool using `main.py` if you prefer the terminal.
+
+### 🟢 Quick Start (CLI Default Run)
 Analyze the default tickers (BTC-USD, ETH-USD) with default settings (6 months period, 1 day interval):
 ```bash
 python main.py
 ```
 
-### 🟠 Advanced Power User
+### 🟠 Advanced Power User (CLI)
 Specify your own basket of altcoins, set the timeframe, export the results to a CSV, and utilize MTF analysis for maximum accuracy:
 ```bash
 python main.py --tickers SOL-USD ADA-USD DOT-USD --period 1y --interval 1wk --use-mtf --export signals.csv
 ```
 
-### 🟣 Strategy Backtesting
+### 🟣 Strategy Backtesting (CLI)
 Want to know if your strategy actually works? Run a historical backtest and see detailed performance metrics:
 ```bash
 python main.py --backtest --period 1y --tickers BTC-USD
