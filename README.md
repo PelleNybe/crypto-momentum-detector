@@ -72,29 +72,25 @@ Whether you're a day trader hunting for quick setups or an investor looking for 
 ## 📸 System In Action
 
 <div align="center">
+  <p><i>Experience the beautifully crafted terminal interface built with <code>rich</code>.</i></p>
 
-*Experience the beautifully crafted terminal interface built with `rich`.*
+  <h3>1. Default Analysis</h3>
+  <img src="docs/assets/ui_default.svg" width="100%" alt="Default Analysis">
 
-<pre style="text-align: left; background-color: #1e1e1e; color: #d4d4d4; padding: 20px; border-radius: 8px; font-family: monospace; font-size: 13px; line-height: 1.5;">
-<span style="color: #569cd6;">╭───────────────── Settings ─────────────────╮</span>
-<span style="color: #569cd6;">│</span> Crypto Momentum Detector                   <span style="color: #569cd6;">│</span>
-<span style="color: #569cd6;">│</span> Analyzing: 2 assets                        <span style="color: #569cd6;">│</span>
-<span style="color: #569cd6;">│</span> Period: 6mo | Interval: 1d | MTF: Disabled <span style="color: #569cd6;">│</span>
-<span style="color: #569cd6;">╰────────────────────────────────────────────╯</span>
-  Analyzing assets... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00
-<span style="color: #ce9178;">╭──────────────────────────── 📊 Portfolio Summary ────────────────────────────╮</span>
-<span style="color: #ce9178;">│</span> Highest RSI: ETH-USD (51.0), BTC-USD (48.6)                                  <span style="color: #ce9178;">│</span>
-<span style="color: #ce9178;">│</span> Lowest RSI: BTC-USD (48.6), ETH-USD (51.0)                                   <span style="color: #ce9178;">│</span>
-<span style="color: #ce9178;">│</span> Top MACD Momentum: BTC-USD, ETH-USD                                          <span style="color: #ce9178;">│</span>
-<span style="color: #ce9178;">╰──────────────────────────────────────────────────────────────────────────────╯</span>
-<span style="color: #4ec9b0;">╭───────────────────── 🎯 Trading Action Recommendations ──────────────────────╮</span>
-<span style="color: #4ec9b0;">│</span> 📈 BUY: 1 assets (ETH-USD) show favorable entry conditions.                  <span style="color: #4ec9b0;">│</span>
-<span style="color: #4ec9b0;">│</span> ⏳ HOLD: 1 assets (BTC-USD) have neutral or conflicting momentum.            <span style="color: #4ec9b0;">│</span>
-<span style="color: #4ec9b0;">╰──────────────────────────────────────────────────────────────────────────────╯</span>
-</pre>
+  <br><br>
 
-*(Note: Terminal tables include sparklines, exact risk levels, and color-coded signals)*
+  <h3>2. Multi-Timeframe (MTF) Analysis</h3>
+  <img src="docs/assets/ui_mtf.svg" width="100%" alt="MTF Analysis">
 
+  <br><br>
+
+  <h3>3. Strategy Backtesting</h3>
+  <img src="docs/assets/ui_backtest.svg" width="100%" alt="Backtesting">
+
+  <br><br>
+
+  <h3>4. Portfolio Overview</h3>
+  <img src="docs/assets/ui_multiple.svg" width="100%" alt="Multiple Assets">
 </div>
 
 <br/>
@@ -102,8 +98,6 @@ Whether you're a day trader hunting for quick setups or an investor looking for 
 <div align="center">
   <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%">
 </div>
-
----
 
 ## 🛠️ Installation
 
