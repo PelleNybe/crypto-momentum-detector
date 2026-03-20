@@ -25,13 +25,12 @@ def test_data_fetcher_init():
 
 @patch("crypto_momentum.data_fetcher.yf.Ticker")
 def test_data_fetcher_fetch_historical_data(mock_ticker, sample_data):
-    # Setup mock to return sample_data when history() is called
     mock_ticker_instance = MagicMock()
     mock_ticker_instance.history.return_value = sample_data
     mock_ticker.return_value = mock_ticker_instance
 
-    fetcher = DataFetcher("BTC-USD")
-    df = fetcher.fetch_historical_data(period="5d", interval="1d")
+    fetcher = DataFetcher("BTC-USD", cache_dir=".test_cache2")
+    df = fetcher.fetch_historical_data(period="5d", interval="1d", max_cache_age_hours=0)
 
     assert not df.empty
     assert all(col in df.columns for col in ['Open', 'High', 'Low', 'Close', 'Volume'])

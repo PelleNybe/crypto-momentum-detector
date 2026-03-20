@@ -30,9 +30,12 @@
   - 🔸 Bollinger Bands
 - 🎯 **Signal Generation**: Evaluates indicators to output precise trading signals: `BUY`, `SELL`, `HOLD`, `STRONG BUY`, and `STRONG SELL`.
 - 🛠️ **Customizable Strategies**: Adjust RSI thresholds for buying and selling signals directly from the command line.
-- ⏪ **Backtesting Module**: Simulate trading based on historical signals to calculate theoretical returns over a specified period.
-- 🎨 **Rich CLI Output**: Beautifully formatted terminal tables using the `rich` library to present findings clearly.
-- 💾 **Data Export**: Export your momentum analysis and backtesting results to a CSV file for tracking and further analysis.
+- ⏪ **Advanced Backtesting Module**: Simulate trading based on historical signals to calculate realistic returns over a specified period, accounting for fees, slippage, max drawdown, and win rates.
+- 🎨 **Rich CLI Output**: Beautifully formatted terminal tables using the `rich` library to present findings clearly, complete with progress bars, visual sparklines, portfolio summary metrics, and trading recommendations panels.
+- 💾 **Parquet Caching**: Implements local Parquet file caching for robust, ultra-fast historical and MTF data loads to prevent rate limiting.
+- 🛡️ **Risk Management Metrics**: Calculates and exposes ATR-based Stop Loss (SL) and Take Profit (TP) levels directly in the terminal output to make signals instantly actionable.
+- 🗺️ **Multi-Timeframe Analysis (MTF)**: Validates generated signals against higher timeframe trend directions for confirmation.
+- 📝 **Data Export**: Export your momentum analysis, risk metrics, and backtesting results to a CSV file for tracking and further analysis.
 
 ---
 
@@ -67,15 +70,15 @@ python main.py
 
 ### 🟠 Advanced Usage
 
-Specify your own tickers, timeframe, and export the results to a CSV file:
+Specify your own tickers, timeframe, and export the results to a CSV file, utilizing MTF analysis:
 
 ```bash
-python main.py --tickers SOL-USD ADA-USD DOT-USD --period 1y --interval 1wk --export signals.csv
+python main.py --tickers SOL-USD ADA-USD DOT-USD --period 1y --interval 1wk --use-mtf --export signals.csv
 ```
 
 ### 🟣 Backtesting and Custom Strategies
 
-Run a backtest on historical data and tweak the strategy parameters:
+Run a backtest on historical data to see how the strategy would have performed, and tweak parameters:
 
 ```bash
 python main.py --backtest --period 1y --rsi-buy-min 35 --rsi-strong-buy 25
@@ -93,7 +96,8 @@ python main.py --backtest --period 1y --rsi-buy-min 35 --rsi-strong-buy 25
 - `--period`: The duration of historical data to analyze (e.g., `1mo`, `3mo`, `6mo`, `1y`).
 - `--interval`: The timeframe interval between data points (e.g., `1h`, `1d`, `1wk`).
 - `--export`: File path to export the results as CSV (e.g., `results.csv`).
-- `--backtest`: Runs a historical backtest and displays performance metrics.
+- `--backtest`: Runs a historical backtest and displays detailed performance metrics.
+- `--use-mtf`: Enables Multi-Timeframe analysis to confirm signals against higher timeframes.
 - `--rsi-buy-min`: Minimum RSI for a regular buy signal (Default: 40).
 - `--rsi-buy-max`: Maximum RSI for a regular buy signal (Default: 70).
 - `--rsi-sell-min`: Minimum RSI for a regular sell signal (Default: 30).
@@ -111,9 +115,10 @@ python main.py --backtest --period 1y --rsi-buy-min 35 --rsi-strong-buy 25
 <summary><b>Click to dive into the trading logic</b></summary>
 <br>
 
-- **📈 Bullish / Buy**: RSI is in an uptrend (default 40-70), MACD is above its signal line, and the closing price is above the 20 EMA.
-- **📉 Bearish / Sell**: RSI is in a downtrend (default 30-60), MACD is below its signal line, and the closing price is below the 20 EMA.
+- **📈 Bullish / Buy**: RSI is in an uptrend (default 40-70), MACD is above its signal line, closing price is above the 20 EMA, and (if `--use-mtf` is active) the higher timeframe trend is bullish.
+- **📉 Bearish / Sell**: RSI is in a downtrend (default 30-60), MACD is below its signal line, closing price is below the 20 EMA, and (if `--use-mtf` is active) the higher timeframe trend is bearish.
 - **💥 Strong Signals**: Extreme overbought (default RSI > 70) or oversold (default RSI < 30) conditions combined with MACD reversals generate strong buy/sell signals.
+- **🛡️ Risk Management**: Take Profit and Stop Loss figures are scaled based on the Average True Range (ATR) relative to the closing price, providing a dynamic risk profile for every generated setup.
 
 </details>
 
