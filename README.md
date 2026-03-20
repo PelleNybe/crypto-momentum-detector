@@ -10,6 +10,13 @@
 [![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg?style=for-the-badge&logo=github)]()
 [![Built with ❤️](https://img.shields.io/badge/Built_with-❤️-ff69b4.svg?style=for-the-badge)](https://github.com/PelleNybe)
 
+[![CI Status](https://img.shields.io/github/actions/workflow/status/PelleNybe/crypto-momentum-detector/ci.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/PelleNybe/crypto-momentum-detector/actions)
+[![Forks](https://img.shields.io/github/forks/PelleNybe/crypto-momentum-detector.svg?style=for-the-badge&logo=github)](https://github.com/PelleNybe/crypto-momentum-detector/network/members)
+[![Stars](https://img.shields.io/github/stars/PelleNybe/crypto-momentum-detector.svg?style=for-the-badge&logo=github)](https://github.com/PelleNybe/crypto-momentum-detector/stargazers)
+[![Watchers](https://img.shields.io/github/watchers/PelleNybe/crypto-momentum-detector.svg?style=for-the-badge&logo=github)](https://github.com/PelleNybe/crypto-momentum-detector/watchers)
+[![Issues](https://img.shields.io/github/issues/PelleNybe/crypto-momentum-detector.svg?style=for-the-badge&logo=github)](https://github.com/PelleNybe/crypto-momentum-detector/issues)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge&logo=github)](http://makeapullrequest.com)
+
 <br/>
 <br/>
 
