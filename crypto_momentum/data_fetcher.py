@@ -1,17 +1,19 @@
 import yfinance as yf
 import pandas as pd
 import logging
+import requests_cache
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 class DataFetcher:
-    def __init__(self, ticker_symbol: str = "BTC-USD"):
+    def __init__(self, ticker_symbol: str = "BTC-USD", cache_db: str = ".yfinance_cache"):
         """
         Initialize the DataFetcher with a specific cryptocurrency ticker.
         yfinance uses symbols like 'BTC-USD', 'ETH-USD'.
         """
         self.ticker_symbol = ticker_symbol
+        self.session = requests_cache.CachedSession(cache_db, expire_after=3600)  # cache for 1 hour
 
     def fetch_historical_data(self, period: str = "6mo", interval: str = "1d") -> pd.DataFrame:
         """

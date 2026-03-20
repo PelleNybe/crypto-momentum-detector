@@ -163,3 +163,4 @@ cython_debug/
 
 # Exported files
 *.csv
+.yfinance_cache.sqlite

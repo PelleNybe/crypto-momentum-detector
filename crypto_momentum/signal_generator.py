@@ -1,15 +1,28 @@
 import pandas as pd
 
 class SignalGenerator:
-    def __init__(self, data: pd.DataFrame):
+    def __init__(self, data: pd.DataFrame, rsi_buy_min: int = 40, rsi_buy_max: int = 70,
+                 rsi_sell_min: int = 30, rsi_sell_max: int = 60, rsi_strong_buy: int = 30, rsi_strong_sell: int = 70):
         """
         Initializes the SignalGenerator with data containing momentum indicators.
 
         Args:
             data (pd.DataFrame): Dataframe that should include 'RSI_14', 'MACD', 'MACD_Signal',
                                  'SMA_20', 'SMA_50', 'EMA_20', 'EMA_50', 'ATR_14' and 'Close'.
+            rsi_buy_min (int): Minimum RSI for a regular buy signal.
+            rsi_buy_max (int): Maximum RSI for a regular buy signal.
+            rsi_sell_min (int): Minimum RSI for a regular sell signal.
+            rsi_sell_max (int): Maximum RSI for a regular sell signal.
+            rsi_strong_buy (int): RSI threshold for a strong buy signal (below this).
+            rsi_strong_sell (int): RSI threshold for a strong sell signal (above this).
         """
         self.data = data
+        self.rsi_buy_min = rsi_buy_min
+        self.rsi_buy_max = rsi_buy_max
+        self.rsi_sell_min = rsi_sell_min
+        self.rsi_sell_max = rsi_sell_max
+        self.rsi_strong_buy = rsi_strong_buy
+        self.rsi_strong_sell = rsi_strong_sell
 
     def generate_signals(self) -> pd.DataFrame:
         """
@@ -42,11 +55,11 @@ class SignalGenerator:
         bb_low = df['BB_Low']
         bb_high = df['BB_High']
 
-        is_bullish = (rsi > 40) & (rsi < 70) & (macd > macd_signal) & (close > ema_20)
-        is_bearish = (rsi < 60) & (rsi > 30) & (macd < macd_signal) & (close < ema_20)
+        is_bullish = (rsi > self.rsi_buy_min) & (rsi < self.rsi_buy_max) & (macd > macd_signal) & (close > ema_20)
+        is_bearish = (rsi < self.rsi_sell_max) & (rsi > self.rsi_sell_min) & (macd < macd_signal) & (close < ema_20)
 
-        strong_buy_cond = (rsi < 30) & (macd > macd_signal) & (close < bb_low)
-        strong_sell_cond = (rsi > 70) & (macd < macd_signal) & (close > bb_high)
+        strong_buy_cond = (rsi < self.rsi_strong_buy) & (macd > macd_signal) & (close < bb_low)
+        strong_sell_cond = (rsi > self.rsi_strong_sell) & (macd < macd_signal) & (close > bb_high)
 
         # Initialize all signals as 'HOLD'
         df['Signal'] = 'HOLD'
