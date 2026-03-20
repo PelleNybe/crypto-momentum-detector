@@ -1,6 +1,6 @@
 # Crypto Momentum Detector
 
-Crypto Momentum Detector is a command-line interface (CLI) tool designed to analyze the momentum of cryptocurrencies. It fetches historical data using Yahoo Finance, calculates key technical indicators, and generates actionable trading signals based on predefined momentum strategies.
+Crypto Momentum Detector is a command-line interface (CLI) tool designed to analyze the momentum of cryptocurrencies. It fetches historical data using Yahoo Finance, calculates key technical indicators, and generates actionable trading signals based on predefined or customizable momentum strategies. It also features a backtesting engine to evaluate strategy performance over time.
 
 ## Features
 
@@ -14,8 +14,10 @@ Crypto Momentum Detector is a command-line interface (CLI) tool designed to anal
   - Average True Range (ATR - 14 periods)
   - Bollinger Bands
 - **Signal Generation**: Evaluates indicators to output precise trading signals: `BUY`, `SELL`, `HOLD`, `STRONG BUY`, and `STRONG SELL`.
+- **Customizable Strategies**: Adjust RSI thresholds for buying and selling signals directly from the command line.
+- **Backtesting Module**: Simulate trading based on historical signals to calculate theoretical returns over a specified period.
 - **Rich CLI Output**: Beautifully formatted terminal tables using the `rich` library to present findings clearly.
-- **Data Export**: Export your momentum analysis to a CSV file for tracking and further analysis.
+- **Data Export**: Export your momentum analysis and backtesting results to a CSV file for tracking and further analysis.
 
 ## Installation
 
@@ -52,12 +54,27 @@ Specify your own tickers, timeframe, and export the results to a CSV file:
 python main.py --tickers SOL-USD ADA-USD DOT-USD --period 1y --interval 1wk --export signals.csv
 ```
 
+### Backtesting and Custom Strategies
+
+Run a backtest on historical data and tweak the strategy parameters:
+
+```bash
+python main.py --backtest --period 1y --rsi-buy-min 35 --rsi-strong-buy 25
+```
+
 ### Arguments
 
 - `--tickers`: A space-separated list of cryptocurrency symbols (e.g., `BTC-USD`, `XRP-USD`).
 - `--period`: The duration of historical data to analyze (e.g., `1mo`, `3mo`, `6mo`, `1y`).
 - `--interval`: The timeframe interval between data points (e.g., `1h`, `1d`, `1wk`).
 - `--export`: File path to export the results as CSV (e.g., `results.csv`).
+- `--backtest`: Runs a historical backtest and displays performance metrics.
+- `--rsi-buy-min`: Minimum RSI for a regular buy signal (Default: 40).
+- `--rsi-buy-max`: Maximum RSI for a regular buy signal (Default: 70).
+- `--rsi-sell-min`: Minimum RSI for a regular sell signal (Default: 30).
+- `--rsi-sell-max`: Maximum RSI for a regular sell signal (Default: 60).
+- `--rsi-strong-buy`: RSI threshold for a strong buy signal (Default: 30).
+- `--rsi-strong-sell`: RSI threshold for a strong sell signal (Default: 70).
 
 ## Testing
 
@@ -69,9 +86,9 @@ python -m pytest tests/
 
 ## Strategy Logic Overview
 
-- **Bullish / Buy**: RSI is in an uptrend (40-70), MACD is above its signal line, and the closing price is above the 20 EMA.
-- **Bearish / Sell**: RSI is in a downtrend (30-60), MACD is below its signal line, and the closing price is below the 20 EMA.
-- **Strong Signals**: Extreme overbought (RSI > 70) or oversold (RSI < 30) conditions combined with MACD reversals generate strong buy/sell signals.
+- **Bullish / Buy**: RSI is in an uptrend (default 40-70), MACD is above its signal line, and the closing price is above the 20 EMA.
+- **Bearish / Sell**: RSI is in a downtrend (default 30-60), MACD is below its signal line, and the closing price is below the 20 EMA.
+- **Strong Signals**: Extreme overbought (default RSI > 70) or oversold (default RSI < 30) conditions combined with MACD reversals generate strong buy/sell signals.
 
 ## License
 

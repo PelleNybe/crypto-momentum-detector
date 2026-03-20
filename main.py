@@ -10,10 +10,11 @@ from rich.panel import Panel
 from crypto_momentum.data_fetcher import DataFetcher
 from crypto_momentum.indicators import MomentumIndicators
 from crypto_momentum.signal_generator import SignalGenerator
+from crypto_momentum.backtester import Backtester
 
 console = Console()
 
-def process_ticker(ticker, period, interval):
+def process_ticker(ticker, period, interval, backtest=False, strategy_params=None):
     try:
         fetcher = DataFetcher(ticker_symbol=ticker)
         data = fetcher.fetch_historical_data(period=period, interval=interval)
@@ -24,7 +25,10 @@ def process_ticker(ticker, period, interval):
         indicators = MomentumIndicators(data)
         df_indicators = indicators.calculate_all()
 
-        generator = SignalGenerator(df_indicators)
+
+        if strategy_params is None:
+            strategy_params = {}
+        generator = SignalGenerator(df_indicators, **strategy_params)
         latest = generator.get_latest_signal()
 
         if not latest:
@@ -32,6 +36,13 @@ def process_ticker(ticker, period, interval):
 
         latest["ticker"] = ticker
         latest["error"] = False
+
+        if backtest:
+            df_with_signals = generator.generate_signals()
+            bt = Backtester(df_with_signals)
+            bt_results = bt.run()
+            latest["backtest"] = bt_results
+
         return latest
 
     except Exception as e:
@@ -64,12 +75,35 @@ def main():
         default=None,
         help="File path to export the results as CSV (e.g., results.csv)"
     )
+    parser.add_argument(
+        "--backtest",
+        action="store_true",
+        help="Run a backtest on historical data and show performance"
+    )
+
+    # Strategy parameters
+    parser.add_argument("--rsi-buy-min", type=int, default=40, help="Minimum RSI for regular buy")
+    parser.add_argument("--rsi-buy-max", type=int, default=70, help="Maximum RSI for regular buy")
+    parser.add_argument("--rsi-sell-min", type=int, default=30, help="Minimum RSI for regular sell")
+    parser.add_argument("--rsi-sell-max", type=int, default=60, help="Maximum RSI for regular sell")
+    parser.add_argument("--rsi-strong-buy", type=int, default=30, help="RSI threshold for strong buy")
+    parser.add_argument("--rsi-strong-sell", type=int, default=70, help="RSI threshold for strong sell")
 
     args = parser.parse_args()
     tickers = args.tickers
     period = args.period
     interval = args.interval
     export_path = args.export
+    backtest = args.backtest
+
+    strategy_params = {
+        'rsi_buy_min': args.rsi_buy_min,
+        'rsi_buy_max': args.rsi_buy_max,
+        'rsi_sell_min': args.rsi_sell_min,
+        'rsi_sell_max': args.rsi_sell_max,
+        'rsi_strong_buy': args.rsi_strong_buy,
+        'rsi_strong_sell': args.rsi_strong_sell
+    }
 
     console.print(Panel.fit(
         f"[bold blue]Crypto Momentum Detector[/bold blue]\n"
@@ -86,10 +120,12 @@ def main():
     table.add_column("MACD", justify="right")
     table.add_column("BB (L-H)", justify="center")
     table.add_column("Signal", justify="center")
+    if backtest:
+        table.add_column("BT Return %", justify="right")
 
     results = []
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = {executor.submit(process_ticker, ticker, period, interval): ticker for ticker in tickers}
+        futures = {executor.submit(process_ticker, ticker, period, interval, backtest, strategy_params): ticker for ticker in tickers}
         for future in concurrent.futures.as_completed(futures):
             results.append(future.result())
 
@@ -101,8 +137,11 @@ def main():
     for result in results:
         ticker = result['ticker']
         if result['error']:
-            table.add_row(ticker, result['status'], "-", "-", "-", "-", "[red]ERROR[/red]")
-            export_data.append({
+            if backtest:
+                table.add_row(ticker, result['status'], "-", "-", "-", "-", "[red]ERROR[/red]", "-")
+            else:
+                table.add_row(ticker, result['status'], "-", "-", "-", "-", "[red]ERROR[/red]")
+            row_data = {
                 "Ticker": ticker,
                 "Date": result['status'],
                 "Price (USD)": "-",
@@ -111,7 +150,10 @@ def main():
                 "BB_Low": "-",
                 "BB_High": "-",
                 "Signal": "ERROR"
-            })
+            }
+            if backtest:
+                row_data["BT_Return_Pct"] = "-"
+            export_data.append(row_data)
         else:
             latest = result
             rsi = latest['RSI']
@@ -131,16 +173,32 @@ def main():
                 signal_color = "bold yellow"
             signal_str = f"[{signal_color}]{signal}[/{signal_color}]"
 
-            table.add_row(
-                ticker,
-                latest['Date'],
-                f"${latest['Price']:.2f}",
-                rsi_str,
-                macd_str,
-                f"${latest['BB_Low']:.0f} - ${latest['BB_High']:.0f}",
-                signal_str
-            )
-            export_data.append({
+            if backtest:
+                bt_return = latest['backtest'].get('Return %', 0)
+                bt_color = "green" if bt_return > 0 else "red"
+                bt_str = f"[{bt_color}]{bt_return:.2f}%[/{bt_color}]"
+                table.add_row(
+                    ticker,
+                    latest['Date'],
+                    f"${latest['Price']:.2f}",
+                    rsi_str,
+                    macd_str,
+                    f"${latest['BB_Low']:.0f} - ${latest['BB_High']:.0f}",
+                    signal_str,
+                    bt_str
+                )
+            else:
+                table.add_row(
+                    ticker,
+                    latest['Date'],
+                    f"${latest['Price']:.2f}",
+                    rsi_str,
+                    macd_str,
+                    f"${latest['BB_Low']:.0f} - ${latest['BB_High']:.0f}",
+                    signal_str
+                )
+
+            row_data = {
                 "Ticker": ticker,
                 "Date": latest['Date'],
                 "Price (USD)": f"{latest['Price']:.2f}",
@@ -149,7 +207,10 @@ def main():
                 "BB_Low": f"{latest['BB_Low']:.2f}",
                 "BB_High": f"{latest['BB_High']:.2f}",
                 "Signal": signal
-            })
+            }
+            if backtest:
+                row_data["BT_Return_Pct"] = f"{latest['backtest'].get('Return %', 0):.2f}%"
+            export_data.append(row_data)
 
     console.print(table)
 
@@ -157,6 +218,8 @@ def main():
         try:
             with open(export_path, 'w', newline='') as csvfile:
                 fieldnames = ["Ticker", "Date", "Price (USD)", "RSI (14)", "MACD", "BB_Low", "BB_High", "Signal"]
+                if backtest:
+                    fieldnames.append("BT_Return_Pct")
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 writer.writeheader()
                 for row in export_data:
