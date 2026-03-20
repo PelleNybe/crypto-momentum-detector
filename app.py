@@ -18,12 +18,16 @@ st.set_page_config(
 )
 
 st.title("⚡ Crypto Momentum Detector")
-st.markdown("Analyze cryptocurrency momentum, calculate technical indicators, and generate actionable trading signals!")
+st.markdown(
+    "Analyze cryptocurrency momentum, calculate technical indicators, and generate actionable trading signals!"
+)
 
 # Sidebar parameters
 st.sidebar.header("Settings")
 
-tickers_input = st.sidebar.text_input("Tickers (space-separated)", "BTC-USD ETH-USD SOL-USD")
+tickers_input = st.sidebar.text_input(
+    "Tickers (space-separated)", "BTC-USD ETH-USD SOL-USD"
+)
 tickers = [t.strip().upper() for t in tickers_input.split() if t.strip()]
 
 period = st.sidebar.selectbox("Period", ["1mo", "3mo", "6mo", "1y", "max"], index=2)
@@ -47,6 +51,7 @@ strategy_params = {
     "rsi_strong_buy": 30,
     "rsi_strong_sell": 70,
 }
+
 
 def process_ticker(ticker, period, interval, run_backtest, strategy_params, use_mtf):
     try:
@@ -93,6 +98,7 @@ def process_ticker(ticker, period, interval, run_backtest, strategy_params, use_
     except Exception as e:
         return {"ticker": ticker, "error": True, "status": str(e)}
 
+
 if st.sidebar.button("Run Analysis", type="primary"):
     if not tickers:
         st.warning("Please enter at least one ticker.")
@@ -123,7 +129,9 @@ if st.sidebar.button("Run Analysis", type="primary"):
     error_results = [r for r in results if r["error"]]
 
     if error_results:
-        st.error(f"Failed to process: {', '.join([r['ticker'] for r in error_results])}")
+        st.error(
+            f"Failed to process: {', '.join([r['ticker'] for r in error_results])}"
+        )
 
     if not successful_results:
         st.error("No valid data could be processed.")
@@ -179,7 +187,12 @@ if st.sidebar.button("Run Analysis", type="primary"):
 
         sl = r.get("Stop_Loss")
         tp = r.get("Take_Profit")
-        if sl is not None and tp is not None and not math.isnan(sl) and not math.isnan(tp):
+        if (
+            sl is not None
+            and tp is not None
+            and not math.isnan(sl)
+            and not math.isnan(tp)
+        ):
             row["SL/TP"] = f"SL: ${sl:.2f} / TP: ${tp:.2f}"
         else:
             row["SL/TP"] = "-"
@@ -201,69 +214,138 @@ if st.sidebar.button("Run Analysis", type="primary"):
         df = r["df"]
         ticker = r["ticker"]
 
-        with st.expander(f"{ticker} - {r['Action']} - Price: ${r['Price']:.2f}", expanded=True):
+        with st.expander(
+            f"{ticker} - {r['Action']} - Price: ${r['Price']:.2f}", expanded=True
+        ):
 
             # Create subplots
             fig = make_subplots(
-                rows=3, cols=1,
+                rows=3,
+                cols=1,
                 shared_xaxes=True,
                 vertical_spacing=0.05,
-                row_heights=[0.6, 0.2, 0.2]
+                row_heights=[0.6, 0.2, 0.2],
             )
 
             # Candlestick chart
             fig.add_trace(
                 go.Candlestick(
                     x=df.index,
-                    open=df['Open'],
-                    high=df['High'],
-                    low=df['Low'],
-                    close=df['Close'],
-                    name='Price'
+                    open=df["Open"],
+                    high=df["High"],
+                    low=df["Low"],
+                    close=df["Close"],
+                    name="Price",
                 ),
-                row=1, col=1
+                row=1,
+                col=1,
             )
 
             # Bollinger Bands
-            if 'BB_High' in df.columns and 'BB_Low' in df.columns:
+            if "BB_High" in df.columns and "BB_Low" in df.columns:
                 fig.add_trace(
-                    go.Scatter(x=df.index, y=df['BB_High'], line=dict(color='gray', width=1, dash='dash'), name='BB High'),
-                    row=1, col=1
+                    go.Scatter(
+                        x=df.index,
+                        y=df["BB_High"],
+                        line=dict(color="gray", width=1, dash="dash"),
+                        name="BB High",
+                    ),
+                    row=1,
+                    col=1,
                 )
                 fig.add_trace(
-                    go.Scatter(x=df.index, y=df['BB_Low'], line=dict(color='gray', width=1, dash='dash'), name='BB Low', fill='tonexty', fillcolor='rgba(128,128,128,0.1)'),
-                    row=1, col=1
+                    go.Scatter(
+                        x=df.index,
+                        y=df["BB_Low"],
+                        line=dict(color="gray", width=1, dash="dash"),
+                        name="BB Low",
+                        fill="tonexty",
+                        fillcolor="rgba(128,128,128,0.1)",
+                    ),
+                    row=1,
+                    col=1,
                 )
 
             # Moving averages
-            if 'SMA_20' in df.columns:
-                fig.add_trace(go.Scatter(x=df.index, y=df['SMA_20'], line=dict(color='orange', width=1), name='SMA 20'), row=1, col=1)
-            if 'SMA_50' in df.columns:
-                fig.add_trace(go.Scatter(x=df.index, y=df['SMA_50'], line=dict(color='blue', width=1), name='SMA 50'), row=1, col=1)
+            if "SMA_20" in df.columns:
+                fig.add_trace(
+                    go.Scatter(
+                        x=df.index,
+                        y=df["SMA_20"],
+                        line=dict(color="orange", width=1),
+                        name="SMA 20",
+                    ),
+                    row=1,
+                    col=1,
+                )
+            if "SMA_50" in df.columns:
+                fig.add_trace(
+                    go.Scatter(
+                        x=df.index,
+                        y=df["SMA_50"],
+                        line=dict(color="blue", width=1),
+                        name="SMA 50",
+                    ),
+                    row=1,
+                    col=1,
+                )
 
             # RSI
-            if 'RSI_14' in df.columns:
-                fig.add_trace(go.Scatter(x=df.index, y=df['RSI_14'], line=dict(color='purple', width=2), name='RSI 14'), row=2, col=1)
+            if "RSI_14" in df.columns:
+                fig.add_trace(
+                    go.Scatter(
+                        x=df.index,
+                        y=df["RSI_14"],
+                        line=dict(color="purple", width=2),
+                        name="RSI 14",
+                    ),
+                    row=2,
+                    col=1,
+                )
                 # RSI Overbought/Oversold lines
                 fig.add_hline(y=70, line_dash="dash", line_color="red", row=2, col=1)
                 fig.add_hline(y=30, line_dash="dash", line_color="green", row=2, col=1)
 
             # MACD
-            if 'MACD' in df.columns and 'MACD_Signal' in df.columns:
-                fig.add_trace(go.Scatter(x=df.index, y=df['MACD'], line=dict(color='blue', width=1), name='MACD'), row=3, col=1)
-                fig.add_trace(go.Scatter(x=df.index, y=df['MACD_Signal'], line=dict(color='orange', width=1), name='Signal'), row=3, col=1)
+            if "MACD" in df.columns and "MACD_Signal" in df.columns:
+                fig.add_trace(
+                    go.Scatter(
+                        x=df.index,
+                        y=df["MACD"],
+                        line=dict(color="blue", width=1),
+                        name="MACD",
+                    ),
+                    row=3,
+                    col=1,
+                )
+                fig.add_trace(
+                    go.Scatter(
+                        x=df.index,
+                        y=df["MACD_Signal"],
+                        line=dict(color="orange", width=1),
+                        name="Signal",
+                    ),
+                    row=3,
+                    col=1,
+                )
 
                 # MACD Histogram
-                macd_hist = df['MACD'] - df['MACD_Signal']
-                colors = ['green' if val >= 0 else 'red' for val in macd_hist]
-                fig.add_trace(go.Bar(x=df.index, y=macd_hist, marker_color=colors, name='Histogram'), row=3, col=1)
+                macd_hist = df["MACD"] - df["MACD_Signal"]
+                colors = ["green" if val >= 0 else "red" for val in macd_hist]
+                fig.add_trace(
+                    go.Bar(
+                        x=df.index, y=macd_hist, marker_color=colors, name="Histogram"
+                    ),
+                    row=3,
+                    col=1,
+                )
 
             # Update layout
             fig.update_layout(
                 title=f"{ticker} Technical Analysis",
                 xaxis_rangeslider_visible=False,
                 height=800,
-                template="plotly_dark"
+                template="plotly_dark",
             )
 
             st.plotly_chart(fig, use_container_width=True)
@@ -273,9 +355,9 @@ if st.sidebar.button("Run Analysis", type="primary"):
             with col1:
                 st.subheader("Signal Details")
                 st.write(f"**Action:** {r['Action']}")
-                if r.get('Stop_Loss') and not math.isnan(r.get('Stop_Loss')):
+                if r.get("Stop_Loss") and not math.isnan(r.get("Stop_Loss")):
                     st.write(f"**Stop Loss:** ${r['Stop_Loss']:.2f}")
-                if r.get('Take_Profit') and not math.isnan(r.get('Take_Profit')):
+                if r.get("Take_Profit") and not math.isnan(r.get("Take_Profit")):
                     st.write(f"**Take Profit:** ${r['Take_Profit']:.2f}")
 
             if run_backtest and "backtest" in r:
