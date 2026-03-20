@@ -4,8 +4,16 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+
 class Backtester:
-    def __init__(self, data: pd.DataFrame, initial_balance: float = 10000.0, fee_rate: float = 0.001, slippage: float = 0.0005, position_size: float = 1.0):
+    def __init__(
+        self,
+        data: pd.DataFrame,
+        initial_balance: float = 10000.0,
+        fee_rate: float = 0.001,
+        slippage: float = 0.0005,
+        position_size: float = 1.0,
+    ):
         """
         Initializes the Backtester.
         """
@@ -19,7 +27,12 @@ class Backtester:
         """
         Simulates trading based on the 'Signal' column.
         """
-        if self.data is None or self.data.empty or 'Signal' not in self.data.columns or 'Close' not in self.data.columns:
+        if (
+            self.data is None
+            or self.data.empty
+            or "Signal" not in self.data.columns
+            or "Close" not in self.data.columns
+        ):
             logger.error("Data must contain 'Signal' and 'Close' columns to backtest.")
             return {}
 
@@ -31,36 +44,40 @@ class Backtester:
         equity_curve = []
 
         for index, row in self.data.iterrows():
-            signal = row['Signal']
-            price = row['Close']
+            signal = row["Signal"]
+            price = row["Close"]
 
             if pd.isna(price) or pd.isna(signal):
-                current_value = balance + (crypto_holdings * price) if not pd.isna(price) else balance
+                current_value = (
+                    balance + (crypto_holdings * price)
+                    if not pd.isna(price)
+                    else balance
+                )
                 equity_curve.append(current_value)
                 continue
 
-            if signal in ['BUY', 'STRONG BUY'] and balance > 0:
+            if signal in ["BUY", "STRONG BUY"] and balance > 0:
                 trade_amount = balance * self.position_size
                 if trade_amount > 0:
                     execution_price = price * (1 + self.slippage)
                     crypto_bought = trade_amount / execution_price
                     fee = crypto_bought * execution_price * self.fee_rate
 
-                    crypto_holdings += (crypto_bought - (fee / execution_price))
+                    crypto_holdings += crypto_bought - (fee / execution_price)
                     balance -= trade_amount
 
                     if entry_price == 0.0:
                         entry_price = execution_price
 
-            elif signal in ['SELL', 'STRONG SELL'] and crypto_holdings > 0:
+            elif signal in ["SELL", "STRONG SELL"] and crypto_holdings > 0:
                 execution_price = price * (1 - self.slippage)
                 revenue = crypto_holdings * execution_price
                 fee = revenue * self.fee_rate
                 net_revenue = revenue - fee
 
                 if entry_price > 0:
-                     trade_return = (execution_price - entry_price) / entry_price
-                     trades.append(trade_return)
+                    trade_return = (execution_price - entry_price) / entry_price
+                    trades.append(trade_return)
 
                 balance += net_revenue
                 crypto_holdings = 0.0
@@ -69,10 +86,12 @@ class Backtester:
             current_value = balance + (crypto_holdings * price)
             equity_curve.append(current_value)
 
-        final_price = self.data['Close'].iloc[-1]
+        final_price = self.data["Close"].iloc[-1]
         final_balance = balance + (crypto_holdings * final_price)
 
-        return_pct = ((final_balance - self.initial_balance) / self.initial_balance) * 100
+        return_pct = (
+            (final_balance - self.initial_balance) / self.initial_balance
+        ) * 100
 
         if equity_curve:
             equity_series = pd.Series(equity_curve)
@@ -86,10 +105,10 @@ class Backtester:
         win_rate = (len(winning_trades) / len(trades) * 100) if trades else 0.0
 
         return {
-            'Initial Balance': self.initial_balance,
-            'Final Balance': final_balance,
-            'Return %': return_pct,
-            'Max Drawdown %': max_drawdown,
-            'Win Rate %': win_rate,
-            'Total Trades': len(trades)
+            "Initial Balance": self.initial_balance,
+            "Final Balance": final_balance,
+            "Return %": return_pct,
+            "Max Drawdown %": max_drawdown,
+            "Win Rate %": win_rate,
+            "Total Trades": len(trades),
         }
