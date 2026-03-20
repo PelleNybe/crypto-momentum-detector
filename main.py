@@ -23,7 +23,7 @@ from crypto_momentum.indicators import MomentumIndicators
 from crypto_momentum.signal_generator import SignalGenerator
 from crypto_momentum.backtester import Backtester
 
-console = Console()
+console = Console(record=True, width=100)
 
 
 def generate_sparkline(data: list) -> str:
@@ -254,6 +254,7 @@ def main():
         action="store_true",
         help="Run a backtest on historical data and show performance",
     )
+    parser.add_argument("--save-svg", type=str, help="Save to SVG")
     parser.add_argument(
         "--use-mtf",
         action="store_true",
@@ -499,6 +500,8 @@ def main():
             )
         except Exception as e:
             console.print(f"[red]Error exporting results to {export_path}: {e}[/red]")
+    if args.save_svg:
+        console.save_svg(args.save_svg, title="Crypto Momentum Detector", clear=False)
 
 
 if __name__ == "__main__":
