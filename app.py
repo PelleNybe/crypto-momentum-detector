@@ -18,7 +18,8 @@ st.set_page_config(
 )
 
 # --- CYBERPUNK / DEEP TECH CUSTOM CSS ---
-st.markdown('''
+st.markdown(
+    """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
 
@@ -309,12 +310,18 @@ h2 {
 <div class="orb orb1"></div>
 <div class="orb orb2"></div>
 <div class="orb orb3"></div>
-''', unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 
-st.markdown('<div class="glitch" style="text-align: center; margin-bottom: 1rem;">NEONPULSE</div><h3 style="text-align: center; color: #14f5ee; letter-spacing: 5px;">CRYPTO MOMENTUM TERMINAL</h3>', unsafe_allow_html=True)
 st.markdown(
-    "<p style='text-align: center; font-size: 1.2rem; color: #a0a0a0;'>INITIALIZING QUANTITATIVE ANALYSIS PROTOCOLS...</p>", unsafe_allow_html=True
+    '<div class="glitch" style="text-align: center; margin-bottom: 1rem;">NEONPULSE</div><h3 style="text-align: center; color: #14f5ee; letter-spacing: 5px;">CRYPTO MOMENTUM TERMINAL</h3>',
+    unsafe_allow_html=True,
+)
+st.markdown(
+    "<p style='text-align: center; font-size: 1.2rem; color: #a0a0a0;'>INITIALIZING QUANTITATIVE ANALYSIS PROTOCOLS...</p>",
+    unsafe_allow_html=True,
 )
 
 # Sidebar parameters
@@ -602,8 +609,22 @@ if st.sidebar.button("Run Analysis", type="primary"):
                     col=1,
                 )
                 # RSI Overbought/Oversold lines
-                fig.add_hline(y=70, line_dash="dash", line_color="#ff00d4", opacity=0.5, row=2, col=1)
-                fig.add_hline(y=30, line_dash="dash", line_color="#14f5ee", opacity=0.5, row=2, col=1)
+                fig.add_hline(
+                    y=70,
+                    line_dash="dash",
+                    line_color="#ff00d4",
+                    opacity=0.5,
+                    row=2,
+                    col=1,
+                )
+                fig.add_hline(
+                    y=30,
+                    line_dash="dash",
+                    line_color="#14f5ee",
+                    opacity=0.5,
+                    row=2,
+                    col=1,
+                )
 
             # MACD
             if "MACD" in df.columns and "MACD_Signal" in df.columns:
@@ -641,14 +662,21 @@ if st.sidebar.button("Run Analysis", type="primary"):
 
             # Update layout
             fig.update_layout(
-                title=dict(text=f"<b>{ticker} TECHNICAL ANALYSIS</b>", font=dict(family="Orbitron", size=20, color="#14f5ee")),
+                title=dict(
+                    text=f"<b>{ticker} TECHNICAL ANALYSIS</b>",
+                    font=dict(family="Orbitron", size=20, color="#14f5ee"),
+                ),
                 xaxis_rangeslider_visible=False,
                 height=800,
                 template="plotly_dark",
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(15, 15, 30, 0.6)",
                 font=dict(family="Rajdhani", color="#e0e0e0", size=14),
-                hoverlabel=dict(bgcolor="rgba(10, 10, 25, 0.9)", font_size=16, font_family="Rajdhani"),
+                hoverlabel=dict(
+                    bgcolor="rgba(10, 10, 25, 0.9)",
+                    font_size=16,
+                    font_family="Rajdhani",
+                ),
                 margin=dict(l=50, r=50, t=60, b=50),
                 legend=dict(
                     orientation="h",
@@ -656,18 +684,28 @@ if st.sidebar.button("Run Analysis", type="primary"):
                     y=1.02,
                     xanchor="right",
                     x=1,
-                    font=dict(family="Rajdhani", color="#14f5ee")
-                )
+                    font=dict(family="Rajdhani", color="#14f5ee"),
+                ),
             )
 
             # Update axes for all subplots
             fig.update_xaxes(
-                showgrid=True, gridwidth=1, gridcolor="rgba(20, 245, 238, 0.1)",
-                zeroline=False, showline=True, linewidth=1, linecolor="rgba(20, 245, 238, 0.3)"
+                showgrid=True,
+                gridwidth=1,
+                gridcolor="rgba(20, 245, 238, 0.1)",
+                zeroline=False,
+                showline=True,
+                linewidth=1,
+                linecolor="rgba(20, 245, 238, 0.3)",
             )
             fig.update_yaxes(
-                showgrid=True, gridwidth=1, gridcolor="rgba(20, 245, 238, 0.1)",
-                zeroline=False, showline=True, linewidth=1, linecolor="rgba(20, 245, 238, 0.3)"
+                showgrid=True,
+                gridwidth=1,
+                gridcolor="rgba(20, 245, 238, 0.1)",
+                zeroline=False,
+                showline=True,
+                linewidth=1,
+                linecolor="rgba(20, 245, 238, 0.3)",
             )
 
             st.plotly_chart(fig, use_container_width=True)
