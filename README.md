@@ -33,7 +33,10 @@ Whether you're a day trader hunting for quick setups or a quant researching stra
 
 ---
 
-## 🚀 5 New World-Class Features
+## 🚀 New World-Class Features
+
+![Terminal Output](docs/assets/ui_default.svg)
+
 
 1.  **📊 On-Balance Volume (OBV) Divergence Detection**: Automatically flags critical hidden bullish and bearish divergences between price action and cumulative volume flow.
 2.  **🧠 Advanced Pattern Recognition Engine**: Scans rolling local extremums to instantly identify Double Top and Double Bottom formations with high precision.
@@ -115,6 +118,7 @@ python main.py --backtest --period 1y --tickers BTC-USD
 | `--interval` | Timeframe interval between data points (`1h`, `1d`, `1wk`) | `--interval 1d` |
 | `--export` | File path to export the detailed results as a CSV | `--export my_trades.csv` |
 | `--backtest` | Flag to run a historical backtest and display performance | `--backtest` |
+| `--save-svg` | Save the terminal output as an SVG file | `--save-svg` |
 | `--use-mtf` | Flag to enable Multi-Timeframe analysis to confirm macro trends | `--use-mtf` |
 
 </details>
