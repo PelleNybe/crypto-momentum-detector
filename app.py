@@ -533,13 +533,16 @@ if analyze_button:
                 if r.get("Take_Profit") and not math.isnan(r.get("Take_Profit")):
                     st.write(f"**Take Profit:** ${r['Take_Profit']:.2f}")
 
-
             with col2:
                 st.subheader("Market Dynamics")
                 st.write(f"**Regime:** {r.get('Market_Regime', 'N/A')}")
                 st.write(f"**Pattern:** {r.get('Pattern', 'None')}")
-                st.write(f"**OBV Bull Div:** {'Yes' if r.get('OBV_Bullish_Div') else 'No'}")
-                st.write(f"**StochRSI Cross:** {'Bullish' if r.get('Stoch_Bullish_Cross') else ('Bearish' if r.get('Stoch_Bearish_Cross') else 'None')}")
+                st.write(
+                    f"**OBV Bull Div:** {'Yes' if r.get('OBV_Bullish_Div') else 'No'}"
+                )
+                st.write(
+                    f"**StochRSI Cross:** {'Bullish' if r.get('Stoch_Bullish_Cross') else ('Bearish' if r.get('Stoch_Bearish_Cross') else 'None')}"
+                )
 
             with col3:
                 st.subheader("Key Levels (VPVR/Fib)")

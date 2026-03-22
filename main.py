@@ -184,7 +184,15 @@ def main():
             f"${res.get('VPVR_POC', 0):.2f}",
             res.get("Market_Regime", "N/A"),
             res.get("Pattern", "None"),
-            "[green]Bullish[/green]" if res.get("Stoch_Bullish_Cross") else ("[red]Bearish[/red]" if res.get("Stoch_Bearish_Cross") else "Neutral"),
+            (
+                "[green]Bullish[/green]"
+                if res.get("Stoch_Bullish_Cross")
+                else (
+                    "[red]Bearish[/red]"
+                    if res.get("Stoch_Bearish_Cross")
+                    else "Neutral"
+                )
+            ),
             cloud,
             htf_fmt,
             action_fmt,
