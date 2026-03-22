@@ -16,7 +16,7 @@ from crypto_momentum.signal_generator import SignalGenerator
 from crypto_momentum.backtester import Backtester
 from crypto_momentum.ai_predictor import AIPredictor
 
-console = Console()
+console = Console(record=True)
 
 
 def format_color(val, threshold1, threshold2, reverse=False):
@@ -93,6 +93,11 @@ def main():
         "--backtest", action="store_true", help="Run historical Monte Carlo backtest"
     )
     parser.add_argument("--export", type=str, help="Export results to CSV (file path)")
+    parser.add_argument(
+        "--save-svg",
+        action="store_true",
+        help="Save the terminal output as an SVG file",
+    )
 
     args = parser.parse_args()
 
@@ -221,6 +226,11 @@ def main():
 
     console.print("\n")
     console.print(table)
+    if args.save_svg:
+        console.save_svg("docs/assets/ui_default.svg", title="NeonPulse UI")
+        console.print(
+            f"[bold green]✓[/bold green] Saved terminal output to docs/assets/ui_default.svg"
+        )
 
     # Export logic
     if args.export:
