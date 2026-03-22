@@ -1,6 +1,7 @@
 import pandas as pd
 from crypto_momentum.ai_predictor import AIPredictor
 
+
 class SignalGenerator:
     def __init__(
         self,
@@ -62,12 +63,12 @@ class SignalGenerator:
         bb_high = df["BB_High"]
 
         # Optional Ichimoku Confluence Check
-        if 'Ichimoku_Bullish' in df.columns:
-             ichimoku_bullish = df['Ichimoku_Bullish']
-             ichimoku_bearish = df['Ichimoku_Bearish']
+        if "Ichimoku_Bullish" in df.columns:
+            ichimoku_bullish = df["Ichimoku_Bullish"]
+            ichimoku_bearish = df["Ichimoku_Bearish"]
         else:
-             ichimoku_bullish = pd.Series(True, index=df.index)
-             ichimoku_bearish = pd.Series(True, index=df.index)
+            ichimoku_bullish = pd.Series(True, index=df.index)
+            ichimoku_bearish = pd.Series(True, index=df.index)
 
         if "HTF_Trend" in df.columns and self.use_mtf:
             htf_bullish = df["HTF_Trend"] == True
@@ -82,7 +83,7 @@ class SignalGenerator:
             & (macd > macd_signal)
             & (close > ema_20)
             & htf_bullish
-            & (ichimoku_bullish | (close > ema_50)) # Added confluence check
+            & (ichimoku_bullish | (close > ema_50))  # Added confluence check
         )
         is_bearish = (
             (rsi < self.rsi_sell_max)
@@ -90,7 +91,7 @@ class SignalGenerator:
             & (macd < macd_signal)
             & (close < ema_20)
             & htf_bearish
-            & (ichimoku_bearish | (close < ema_50)) # Added confluence check
+            & (ichimoku_bearish | (close < ema_50))  # Added confluence check
         )
 
         strong_buy_cond = (

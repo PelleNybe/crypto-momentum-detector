@@ -18,19 +18,28 @@ from crypto_momentum.ai_predictor import AIPredictor
 
 console = Console()
 
+
 def format_color(val, threshold1, threshold2, reverse=False):
     if reverse:
-        if val <= threshold1: return f"[green]{val:.2f}[/green]"
-        if val >= threshold2: return f"[red]{val:.2f}[/red]"
+        if val <= threshold1:
+            return f"[green]{val:.2f}[/green]"
+        if val >= threshold2:
+            return f"[red]{val:.2f}[/red]"
     else:
-        if val >= threshold2: return f"[green]{val:.2f}[/green]"
-        if val <= threshold1: return f"[red]{val:.2f}[/red]"
+        if val >= threshold2:
+            return f"[green]{val:.2f}[/green]"
+        if val <= threshold1:
+            return f"[red]{val:.2f}[/red]"
     return f"[yellow]{val:.2f}[/yellow]"
 
+
 def format_ai_confidence(val):
-    if val >= 60: return f"[bold cyan]{val:.1f}%[/bold cyan]"
-    if val <= 40: return f"[bold red]{val:.1f}%[/bold red]"
+    if val >= 60:
+        return f"[bold cyan]{val:.1f}%[/bold cyan]"
+    if val <= 40:
+        return f"[bold red]{val:.1f}%[/bold red]"
     return f"[bold yellow]{val:.1f}%[/bold yellow]"
+
 
 def process_ticker(ticker, period, interval, use_mtf, run_backtest):
     fetcher = DataFetcher(ticker_symbol=ticker)
@@ -57,10 +66,7 @@ def process_ticker(ticker, period, interval, use_mtf, run_backtest):
     ai_confidence = predictor.train_and_predict()
     latest_signal["AI_Confidence"] = ai_confidence
 
-    result = {
-        "ticker": ticker,
-        **latest_signal
-    }
+    result = {"ticker": ticker, **latest_signal}
 
     if run_backtest:
         df_signals = generator.generate_signals()
@@ -69,22 +75,34 @@ def process_ticker(ticker, period, interval, use_mtf, run_backtest):
 
     return result
 
+
 def main():
     parser = argparse.ArgumentParser(description="⚡ NeonPulse CLI: AI Crypto Momentum")
-    parser.add_argument("--tickers", nargs="+", default=["BTC-USD", "ETH-USD"], help="List of tickers (e.g., BTC-USD ETH-USD)")
+    parser.add_argument(
+        "--tickers",
+        nargs="+",
+        default=["BTC-USD", "ETH-USD"],
+        help="List of tickers (e.g., BTC-USD ETH-USD)",
+    )
     parser.add_argument("--period", default="6mo", help="Data period (e.g., 6mo, 1y)")
     parser.add_argument("--interval", default="1d", help="Data interval (e.g., 1h, 1d)")
-    parser.add_argument("--use-mtf", action="store_true", help="Enable Multi-Timeframe Analysis")
-    parser.add_argument("--backtest", action="store_true", help="Run historical Monte Carlo backtest")
+    parser.add_argument(
+        "--use-mtf", action="store_true", help="Enable Multi-Timeframe Analysis"
+    )
+    parser.add_argument(
+        "--backtest", action="store_true", help="Run historical Monte Carlo backtest"
+    )
     parser.add_argument("--export", type=str, help="Export results to CSV (file path)")
 
     args = parser.parse_args()
 
-    console.print(Panel.fit(
-        "[bold cyan]⚡ NeonPulse AI Crypto Terminal ⚡[/bold cyan]\n"
-        "[dim]Neural Network + Momentum Scanning + Risk Profiling[/dim]",
-        border_style="cyan"
-    ))
+    console.print(
+        Panel.fit(
+            "[bold cyan]⚡ NeonPulse AI Crypto Terminal ⚡[/bold cyan]\n"
+            "[dim]Neural Network + Momentum Scanning + Risk Profiling[/dim]",
+            border_style="cyan",
+        )
+    )
 
     results = []
 
@@ -96,7 +114,17 @@ def main():
         task = progress.add_task("[cyan]Scanning markets...", total=len(args.tickers))
 
         with ThreadPoolExecutor(max_workers=min(10, len(args.tickers))) as executor:
-            futures = {executor.submit(process_ticker, t, args.period, args.interval, args.use_mtf, args.backtest): t for t in args.tickers}
+            futures = {
+                executor.submit(
+                    process_ticker,
+                    t,
+                    args.period,
+                    args.interval,
+                    args.use_mtf,
+                    args.backtest,
+                ): t
+                for t in args.tickers
+            }
             for future in futures:
                 res = future.result()
                 results.append(res)
@@ -113,19 +141,37 @@ def main():
     table.add_column("Action", justify="center", style="bold")
 
     if args.backtest:
-         table.add_column("MC Return", justify="right")
-         table.add_column("Risk Ruin", justify="right")
+        table.add_column("MC Return", justify="right")
+        table.add_column("Risk Ruin", justify="right")
 
     for res in results:
         if "error" in res:
-            table.add_row(res["ticker"], f"[red]{res['error']}[/red]", "", "", "", "", "", "")
+            table.add_row(
+                res["ticker"], f"[red]{res['error']}[/red]", "", "", "", "", "", ""
+            )
             continue
 
         action = res["Action"]
-        action_fmt = f"[bold green]{action}[/bold green]" if "BUY" in action else f"[bold red]{action}[/bold red]" if "SELL" in action else f"[bold yellow]{action}[/bold yellow]"
+        action_fmt = (
+            f"[bold green]{action}[/bold green]"
+            if "BUY" in action
+            else (
+                f"[bold red]{action}[/bold red]"
+                if "SELL" in action
+                else f"[bold yellow]{action}[/bold yellow]"
+            )
+        )
 
         htf_fmt = "[green]BULL[/green]" if res.get("HTF_Trend") else "[red]BEAR[/red]"
-        cloud = "[green]BULL[/green]" if res.get("Ichimoku_Bullish") else "[red]BEAR[/red]" if res.get("Ichimoku_Bearish") else "[yellow]NEUTRAL[/yellow]"
+        cloud = (
+            "[green]BULL[/green]"
+            if res.get("Ichimoku_Bullish")
+            else (
+                "[red]BEAR[/red]"
+                if res.get("Ichimoku_Bearish")
+                else "[yellow]NEUTRAL[/yellow]"
+            )
+        )
 
         row = [
             res["ticker"],
@@ -135,15 +181,27 @@ def main():
             f"${res.get('VPVR_POC', 0):.2f}",
             cloud,
             htf_fmt,
-            action_fmt
+            action_fmt,
         ]
 
         if args.backtest and "backtest" in res:
-             mc_ret = res["backtest"].get("MC Median Return %", 0)
-             ruin = res["backtest"].get("Risk of Ruin %", 0)
-             mc_fmt = f"[green]{mc_ret:.1f}%[/green]" if mc_ret > 0 else f"[red]{mc_ret:.1f}%[/red]"
-             ruin_fmt = f"[red]{ruin:.1f}%[/red]" if ruin > 10 else f"[yellow]{ruin:.1f}%[/yellow]" if ruin > 5 else f"[green]{ruin:.1f}%[/green]"
-             row.extend([mc_fmt, ruin_fmt])
+            mc_ret = res["backtest"].get("MC Median Return %", 0)
+            ruin = res["backtest"].get("Risk of Ruin %", 0)
+            mc_fmt = (
+                f"[green]{mc_ret:.1f}%[/green]"
+                if mc_ret > 0
+                else f"[red]{mc_ret:.1f}%[/red]"
+            )
+            ruin_fmt = (
+                f"[red]{ruin:.1f}%[/red]"
+                if ruin > 10
+                else (
+                    f"[yellow]{ruin:.1f}%[/yellow]"
+                    if ruin > 5
+                    else f"[green]{ruin:.1f}%[/green]"
+                )
+            )
+            row.extend([mc_fmt, ruin_fmt])
 
         table.add_row(*row)
 
@@ -154,12 +212,17 @@ def main():
     if args.export:
         export_data = []
         for r in results:
-            if "error" in r: continue
+            if "error" in r:
+                continue
             row = {
-                "Ticker": r["ticker"], "Price": r["Price"], "Action": r["Action"],
+                "Ticker": r["ticker"],
+                "Price": r["Price"],
+                "Action": r["Action"],
                 "AI_Confidence": r.get("AI_Confidence", 50),
-                "RSI": r["RSI"], "MACD": r["MACD"], "VPVR_POC": r.get("VPVR_POC", 0),
-                "Ichimoku_Bullish": r.get("Ichimoku_Bullish", False)
+                "RSI": r["RSI"],
+                "MACD": r["MACD"],
+                "VPVR_POC": r.get("VPVR_POC", 0),
+                "Ichimoku_Bullish": r.get("Ichimoku_Bullish", False),
             }
             if args.backtest and "backtest" in r:
                 row["MC_Return_Pct"] = r["backtest"].get("MC Median Return %", 0)
@@ -168,6 +231,7 @@ def main():
 
         pd.DataFrame(export_data).to_csv(args.export, index=False)
         console.print(f"[bold green]✓[/bold green] Results exported to {args.export}")
+
 
 if __name__ == "__main__":
     main()

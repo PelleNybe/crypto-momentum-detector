@@ -6,14 +6,18 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class AIPredictor:
     """
     An AI module that uses a Random Forest Classifier to predict the probability
     of a positive price movement in the next period.
     """
+
     def __init__(self, df: pd.DataFrame):
         self.df = df.copy()
-        self.model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
+        self.model = RandomForestClassifier(
+            n_estimators=100, max_depth=5, random_state=42
+        )
         self.scaler = StandardScaler()
         self.is_trained = False
 
@@ -22,28 +26,36 @@ class AIPredictor:
         if self.df.empty or len(self.df) < 50:
             return None, None
 
-        features = ['RSI_14', 'MACD', 'MACD_Hist', 'ATR_14', 'Close', 'SMA_20', 'SMA_50']
+        features = [
+            "RSI_14",
+            "MACD",
+            "MACD_Hist",
+            "ATR_14",
+            "Close",
+            "SMA_20",
+            "SMA_50",
+        ]
 
         # Check if features exist
         available_features = [f for f in features if f in self.df.columns]
         if len(available_features) < len(features):
-             return None, None
+            return None, None
 
         df_ml = self.df.copy()
 
         # Calculate derived features
-        df_ml['Price_Change'] = df_ml['Close'].pct_change()
-        df_ml['SMA_Diff'] = (df_ml['SMA_20'] - df_ml['SMA_50']) / df_ml['SMA_50']
+        df_ml["Price_Change"] = df_ml["Close"].pct_change()
+        df_ml["SMA_Diff"] = (df_ml["SMA_20"] - df_ml["SMA_50"]) / df_ml["SMA_50"]
 
         # Target: 1 if next period's return is positive, 0 otherwise
-        df_ml['Target'] = (df_ml['Close'].shift(-1) > df_ml['Close']).astype(int)
+        df_ml["Target"] = (df_ml["Close"].shift(-1) > df_ml["Close"]).astype(int)
 
         # Drop rows with NaN values created by indicators or shift
         df_ml = df_ml.dropna()
 
-        ml_features = available_features + ['Price_Change', 'SMA_Diff']
+        ml_features = available_features + ["Price_Change", "SMA_Diff"]
         X = df_ml[ml_features]
-        y = df_ml['Target']
+        y = df_ml["Target"]
 
         return X, y, ml_features
 

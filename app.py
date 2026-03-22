@@ -150,9 +150,7 @@ with st.sidebar:
             "Time Horizon", ["1mo", "3mo", "6mo", "1y", "2y", "max"], index=3
         )
     with col2:
-        interval = st.selectbox(
-            "Resolution", ["1h", "1d", "1wk", "1mo"], index=1
-        )
+        interval = st.selectbox("Resolution", ["1h", "1d", "1wk", "1mo"], index=1)
 
     st.subheader("Neural Network & Risk")
     use_mtf = st.checkbox(
@@ -200,7 +198,7 @@ if analyze_button:
             df_with_indicators = indicators.calculate_all()
 
             # Extract VPVR profile for charting before passing to signal generator
-            vpvr_profile = indicators.calculate_vpvr(df_with_indicators)['profile']
+            vpvr_profile = indicators.calculate_vpvr(df_with_indicators)["profile"]
 
             generator = SignalGenerator(data=df_with_indicators, use_mtf=use_mtf)
             latest_signal = generator.get_latest_signal()
@@ -256,19 +254,36 @@ if analyze_button:
     sell_signals = [r for r in successful_results if "SELL" in r["Action"]]
 
     with col1:
-        st.metric("Top AI Pick", f"{highest_ai['ticker']}", f"{highest_ai.get('AI_Confidence', 0):.1f}% Conf")
+        st.metric(
+            "Top AI Pick",
+            f"{highest_ai['ticker']}",
+            f"{highest_ai.get('AI_Confidence', 0):.1f}% Conf",
+        )
 
     with col2:
         st.markdown(f"**📈 BUY Configs:** {len(buy_signals)}")
         st.markdown(f"**📉 SELL Configs:** {len(sell_signals)}")
 
     with col3:
-        st.metric("Highest RSI", f"{highest_rsi['ticker']}", f"{highest_rsi['RSI']:.1f}")
+        st.metric(
+            "Highest RSI", f"{highest_rsi['ticker']}", f"{highest_rsi['RSI']:.1f}"
+        )
 
     with col4:
-        top_mc = max(successful_results, key=lambda x: x.get("backtest", {}).get("MC Median Return %", 0)) if run_backtest and successful_results[0].get("backtest") else None
+        top_mc = (
+            max(
+                successful_results,
+                key=lambda x: x.get("backtest", {}).get("MC Median Return %", 0),
+            )
+            if run_backtest and successful_results[0].get("backtest")
+            else None
+        )
         if top_mc:
-             st.metric("Best MC Return", f"{top_mc['ticker']}", f"{top_mc['backtest']['MC Median Return %']:.1f}%")
+            st.metric(
+                "Best MC Return",
+                f"{top_mc['ticker']}",
+                f"{top_mc['backtest']['MC Median Return %']:.1f}%",
+            )
 
     st.divider()
 
@@ -280,11 +295,21 @@ if analyze_button:
         ticker = r["ticker"]
         ai_conf = r.get("AI_Confidence", 50)
 
-        conf_class = "ai-confidence-high" if ai_conf > 60 else "ai-confidence-mid" if ai_conf >= 40 else "ai-confidence-low"
+        conf_class = (
+            "ai-confidence-high"
+            if ai_conf > 60
+            else "ai-confidence-mid" if ai_conf >= 40 else "ai-confidence-low"
+        )
 
-        with st.expander(f"{ticker} | SIGNAL: {r['Action']} | AI CONFIDENCE: {ai_conf:.1f}%", expanded=True):
+        with st.expander(
+            f"{ticker} | SIGNAL: {r['Action']} | AI CONFIDENCE: {ai_conf:.1f}%",
+            expanded=True,
+        ):
 
-            st.markdown(f"<h3 style='text-align: center; margin-bottom: 0;'><span class='{conf_class}'>AI CONFIDENCE: {ai_conf:.1f}%</span></h3>", unsafe_allow_html=True)
+            st.markdown(
+                f"<h3 style='text-align: center; margin-bottom: 0;'><span class='{conf_class}'>AI CONFIDENCE: {ai_conf:.1f}%</span></h3>",
+                unsafe_allow_html=True,
+            )
 
             # Create subplots including Volume Profile
             fig = make_subplots(
@@ -295,69 +320,186 @@ if analyze_button:
                 vertical_spacing=0.05,
                 horizontal_spacing=0.01,
                 row_heights=[0.6, 0.2, 0.2],
-                specs=[[{"type": "xy"}, {"type": "xy"}],
-                       [{"type": "xy", "colspan": 2}, None],
-                       [{"type": "xy", "colspan": 2}, None]]
+                specs=[
+                    [{"type": "xy"}, {"type": "xy"}],
+                    [{"type": "xy", "colspan": 2}, None],
+                    [{"type": "xy", "colspan": 2}, None],
+                ],
             )
 
             # --- Candlestick chart ---
             fig.add_trace(
                 go.Candlestick(
-                    x=df.index, open=df["Open"], high=df["High"], low=df["Low"], close=df["Close"],
+                    x=df.index,
+                    open=df["Open"],
+                    high=df["High"],
+                    low=df["Low"],
+                    close=df["Close"],
                     name="Price",
-                    increasing_line_color="#14f5ee", decreasing_line_color="#ff00d4",
-                    increasing_fillcolor="rgba(20, 245, 238, 0.4)", decreasing_fillcolor="rgba(255, 0, 212, 0.4)",
+                    increasing_line_color="#14f5ee",
+                    decreasing_line_color="#ff00d4",
+                    increasing_fillcolor="rgba(20, 245, 238, 0.4)",
+                    decreasing_fillcolor="rgba(255, 0, 212, 0.4)",
                 ),
-                row=1, col=1,
+                row=1,
+                col=1,
             )
 
             # --- WORLD CLASS FEATURE: Ichimoku Cloud Plotting ---
             if "Ichimoku_SpanA" in df.columns and "Ichimoku_SpanB" in df.columns:
-                 # Standard Ichimoku plots are shifted 26 periods forward, but we align them with price here for display.
-                 # To draw a filled cloud, we add Span A and Span B.
-                 fig.add_trace(go.Scatter(x=df.index, y=df['Ichimoku_SpanA'], line=dict(color='rgba(20, 245, 238, 0.3)', width=1), name='Span A'), row=1, col=1)
-                 fig.add_trace(go.Scatter(x=df.index, y=df['Ichimoku_SpanB'], line=dict(color='rgba(255, 0, 212, 0.3)', width=1), fill='tonexty', fillcolor='rgba(100, 100, 100, 0.1)', name='Span B'), row=1, col=1)
+                # Standard Ichimoku plots are shifted 26 periods forward, but we align them with price here for display.
+                # To draw a filled cloud, we add Span A and Span B.
+                fig.add_trace(
+                    go.Scatter(
+                        x=df.index,
+                        y=df["Ichimoku_SpanA"],
+                        line=dict(color="rgba(20, 245, 238, 0.3)", width=1),
+                        name="Span A",
+                    ),
+                    row=1,
+                    col=1,
+                )
+                fig.add_trace(
+                    go.Scatter(
+                        x=df.index,
+                        y=df["Ichimoku_SpanB"],
+                        line=dict(color="rgba(255, 0, 212, 0.3)", width=1),
+                        fill="tonexty",
+                        fillcolor="rgba(100, 100, 100, 0.1)",
+                        name="Span B",
+                    ),
+                    row=1,
+                    col=1,
+                )
 
             # --- WORLD CLASS FEATURE: Fibonacci Retracements ---
             if "Fib_0" in df.columns:
-                last_fib0 = df['Fib_0'].iloc[-1]
-                last_fib5 = df['Fib_0.5'].iloc[-1]
-                last_fib1 = df['Fib_1'].iloc[-1]
+                last_fib0 = df["Fib_0"].iloc[-1]
+                last_fib5 = df["Fib_0.5"].iloc[-1]
+                last_fib1 = df["Fib_1"].iloc[-1]
 
-                fig.add_hline(y=last_fib0, line_dash="dash", line_color="red", opacity=0.3, row=1, col=1, annotation_text="Fib 0")
-                fig.add_hline(y=last_fib5, line_dash="dash", line_color="yellow", opacity=0.3, row=1, col=1, annotation_text="Fib 0.5")
-                fig.add_hline(y=last_fib1, line_dash="dash", line_color="green", opacity=0.3, row=1, col=1, annotation_text="Fib 1")
+                fig.add_hline(
+                    y=last_fib0,
+                    line_dash="dash",
+                    line_color="red",
+                    opacity=0.3,
+                    row=1,
+                    col=1,
+                    annotation_text="Fib 0",
+                )
+                fig.add_hline(
+                    y=last_fib5,
+                    line_dash="dash",
+                    line_color="yellow",
+                    opacity=0.3,
+                    row=1,
+                    col=1,
+                    annotation_text="Fib 0.5",
+                )
+                fig.add_hline(
+                    y=last_fib1,
+                    line_dash="dash",
+                    line_color="green",
+                    opacity=0.3,
+                    row=1,
+                    col=1,
+                    annotation_text="Fib 1",
+                )
 
             # --- WORLD CLASS FEATURE: Volume Profile (VPVR) ---
             vpvr_profile = r.get("vpvr_profile", pd.DataFrame())
             if not vpvr_profile.empty:
-                 y_vals = (vpvr_profile['Price_Start'] + vpvr_profile['Price_End']) / 2
-                 fig.add_trace(
-                     go.Bar(y=y_vals, x=vpvr_profile['Volume'], orientation='h', marker_color='rgba(249, 202, 36, 0.3)', showlegend=False),
-                     row=1, col=2
-                 )
-                 # Add POC Line on Main Chart
-                 poc_price = r.get('VPVR_POC', 0)
-                 if poc_price > 0:
-                      fig.add_hline(y=poc_price, line_width=2, line_color="#f9ca24", row=1, col=1, annotation_text="POC")
+                y_vals = (vpvr_profile["Price_Start"] + vpvr_profile["Price_End"]) / 2
+                fig.add_trace(
+                    go.Bar(
+                        y=y_vals,
+                        x=vpvr_profile["Volume"],
+                        orientation="h",
+                        marker_color="rgba(249, 202, 36, 0.3)",
+                        showlegend=False,
+                    ),
+                    row=1,
+                    col=2,
+                )
+                # Add POC Line on Main Chart
+                poc_price = r.get("VPVR_POC", 0)
+                if poc_price > 0:
+                    fig.add_hline(
+                        y=poc_price,
+                        line_width=2,
+                        line_color="#f9ca24",
+                        row=1,
+                        col=1,
+                        annotation_text="POC",
+                    )
 
             # --- RSI ---
             if "RSI_14" in df.columns:
-                fig.add_trace(go.Scatter(x=df.index, y=df["RSI_14"], line=dict(color="#ff00d4", width=2), name="RSI 14"), row=2, col=1)
-                fig.add_hline(y=70, line_dash="dash", line_color="#ff00d4", opacity=0.5, row=2, col=1)
-                fig.add_hline(y=30, line_dash="dash", line_color="#14f5ee", opacity=0.5, row=2, col=1)
+                fig.add_trace(
+                    go.Scatter(
+                        x=df.index,
+                        y=df["RSI_14"],
+                        line=dict(color="#ff00d4", width=2),
+                        name="RSI 14",
+                    ),
+                    row=2,
+                    col=1,
+                )
+                fig.add_hline(
+                    y=70,
+                    line_dash="dash",
+                    line_color="#ff00d4",
+                    opacity=0.5,
+                    row=2,
+                    col=1,
+                )
+                fig.add_hline(
+                    y=30,
+                    line_dash="dash",
+                    line_color="#14f5ee",
+                    opacity=0.5,
+                    row=2,
+                    col=1,
+                )
 
             # --- MACD ---
             if "MACD" in df.columns and "MACD_Signal" in df.columns:
-                fig.add_trace(go.Scatter(x=df.index, y=df["MACD"], line=dict(color="#686de0", width=1.5), name="MACD"), row=3, col=1)
-                fig.add_trace(go.Scatter(x=df.index, y=df["MACD_Signal"], line=dict(color="#f9ca24", width=1.5), name="Signal"), row=3, col=1)
+                fig.add_trace(
+                    go.Scatter(
+                        x=df.index,
+                        y=df["MACD"],
+                        line=dict(color="#686de0", width=1.5),
+                        name="MACD",
+                    ),
+                    row=3,
+                    col=1,
+                )
+                fig.add_trace(
+                    go.Scatter(
+                        x=df.index,
+                        y=df["MACD_Signal"],
+                        line=dict(color="#f9ca24", width=1.5),
+                        name="Signal",
+                    ),
+                    row=3,
+                    col=1,
+                )
                 macd_hist = df["MACD"] - df["MACD_Signal"]
                 colors = ["#14f5ee" if val >= 0 else "#ff00d4" for val in macd_hist]
-                fig.add_trace(go.Bar(x=df.index, y=macd_hist, marker_color=colors, name="Histogram"), row=3, col=1)
+                fig.add_trace(
+                    go.Bar(
+                        x=df.index, y=macd_hist, marker_color=colors, name="Histogram"
+                    ),
+                    row=3,
+                    col=1,
+                )
 
             # Update layout
             fig.update_layout(
-                title=dict(text=f"<b>{ticker} AI & TECHNICAL ANALYSIS</b>", font=dict(family="Orbitron", size=20, color="#14f5ee")),
+                title=dict(
+                    text=f"<b>{ticker} AI & TECHNICAL ANALYSIS</b>",
+                    font=dict(family="Orbitron", size=20, color="#14f5ee"),
+                ),
                 xaxis_rangeslider_visible=False,
                 height=900,
                 template="plotly_dark",
@@ -369,8 +511,12 @@ if analyze_button:
             )
 
             # Hide axes for VPVR
-            fig.update_xaxes(showticklabels=False, showgrid=False, zeroline=False, row=1, col=2)
-            fig.update_yaxes(showticklabels=False, showgrid=False, zeroline=False, row=1, col=2)
+            fig.update_xaxes(
+                showticklabels=False, showgrid=False, zeroline=False, row=1, col=2
+            )
+            fig.update_yaxes(
+                showticklabels=False, showgrid=False, zeroline=False, row=1, col=2
+            )
 
             st.plotly_chart(fig, use_container_width=True)
 
@@ -379,18 +525,20 @@ if analyze_button:
             with col1:
                 st.subheader("Signal Logic")
                 st.write(f"**Final Action:** {r['Action']}")
-                st.write(f"**Ichimoku Bullish:** {'Yes' if r.get('Ichimoku_Bullish') else 'No'}")
+                st.write(
+                    f"**Ichimoku Bullish:** {'Yes' if r.get('Ichimoku_Bullish') else 'No'}"
+                )
                 if r.get("Stop_Loss") and not math.isnan(r.get("Stop_Loss")):
                     st.write(f"**Stop Loss:** ${r['Stop_Loss']:.2f}")
                 if r.get("Take_Profit") and not math.isnan(r.get("Take_Profit")):
                     st.write(f"**Take Profit:** ${r['Take_Profit']:.2f}")
 
             with col2:
-                 st.subheader("Key Levels (VPVR/Fib)")
-                 st.write(f"**Volume POC:** ${r.get('VPVR_POC', 0):.2f}")
-                 st.write(f"**Fib High (0):** ${r.get('Fib_0', 0):.2f}")
-                 st.write(f"**Fib Mid (0.5):** ${r.get('Fib_0.5', 0):.2f}")
-                 st.write(f"**Fib Low (1):** ${r.get('Fib_1', 0):.2f}")
+                st.subheader("Key Levels (VPVR/Fib)")
+                st.write(f"**Volume POC:** ${r.get('VPVR_POC', 0):.2f}")
+                st.write(f"**Fib High (0):** ${r.get('Fib_0', 0):.2f}")
+                st.write(f"**Fib Mid (0.5):** ${r.get('Fib_0.5', 0):.2f}")
+                st.write(f"**Fib Low (1):** ${r.get('Fib_1', 0):.2f}")
 
             if run_backtest and "backtest" in r:
                 with col3:
@@ -398,6 +546,16 @@ if analyze_button:
                     bt = r["backtest"]
                     st.write(f"**Historical Return:** {bt.get('Return %', 0):.2f}%")
                     st.write(f"**Win Rate:** {bt.get('Win Rate %', 0):.2f}%")
-                    st.write(f"**MC Median Return:** <span style='color:#14f5ee'>{bt.get('MC Median Return %', 0):.2f}%</span>", unsafe_allow_html=True)
-                    risk_color = "#ff00d4" if bt.get('Risk of Ruin %', 0) > 10 else "#f9ca24" if bt.get('Risk of Ruin %', 0) > 5 else "#14f5ee"
-                    st.write(f"**Risk of Ruin (>20% DD):** <span style='color:{risk_color}'>{bt.get('Risk of Ruin %', 0):.2f}%</span>", unsafe_allow_html=True)
+                    st.write(
+                        f"**MC Median Return:** <span style='color:#14f5ee'>{bt.get('MC Median Return %', 0):.2f}%</span>",
+                        unsafe_allow_html=True,
+                    )
+                    risk_color = (
+                        "#ff00d4"
+                        if bt.get("Risk of Ruin %", 0) > 10
+                        else "#f9ca24" if bt.get("Risk of Ruin %", 0) > 5 else "#14f5ee"
+                    )
+                    st.write(
+                        f"**Risk of Ruin (>20% DD):** <span style='color:{risk_color}'>{bt.get('Risk of Ruin %', 0):.2f}%</span>",
+                        unsafe_allow_html=True,
+                    )
