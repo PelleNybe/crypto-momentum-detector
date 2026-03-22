@@ -1,730 +1,403 @@
 import streamlit as st
 import pandas as pd
-import concurrent.futures
+import yfinance as yf
+from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
 import math
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import numpy as np
 
+# Adjust imports to correctly path to module
 from crypto_momentum.data_fetcher import DataFetcher
 from crypto_momentum.indicators import MomentumIndicators
 from crypto_momentum.signal_generator import SignalGenerator
 from crypto_momentum.backtester import Backtester
 
+# --- CUSTOM CSS FOR "DEEP TECH / CYBERPUNK" AESTHETIC ---
 st.set_page_config(
-    page_title="Crypto Momentum Detector",
+    page_title="NeonPulse | Crypto AI Momentum",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# --- CYBERPUNK / DEEP TECH CUSTOM CSS ---
 st.markdown(
     """
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
+    <style>
+    /* Main Backgrounds */
+    .stApp {
+        background-color: #05050f;
+        color: #e0e0e0;
+        font-family: 'Rajdhani', sans-serif;
+    }
 
-/* Base Styles & Background */
-.stApp {
-    background-color: #050510;
-    background-image:
-        radial-gradient(circle at 15% 50%, rgba(20, 245, 238, 0.08) 0%, transparent 50%),
-        radial-gradient(circle at 85% 30%, rgba(255, 0, 212, 0.08) 0%, transparent 50%);
-    background-attachment: fixed;
-    color: #e0e0e0;
-    font-family: 'Rajdhani', sans-serif;
-    overflow-x: hidden;
-}
+    /* Neon Glow Headers */
+    h1, h2, h3 {
+        color: #ffffff;
+        text-shadow: 0 0 10px #14f5ee, 0 0 20px #14f5ee;
+        font-family: 'Orbitron', sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
 
-/* 3D Animated Grid Background */
-.stApp::before {
-    content: '';
-    position: fixed;
-    top: 0; left: -50%; width: 200%; height: 200%;
-    background-image:
-        linear-gradient(rgba(20, 245, 238, 0.1) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(20, 245, 238, 0.1) 1px, transparent 1px);
-    background-size: 50px 50px;
-    transform: perspective(500px) rotateX(60deg) translateY(-100px) translateZ(-200px);
-    animation: gridMove 15s linear infinite;
-    z-index: -1;
-    pointer-events: none;
-}
+    /* Sidebar */
+    .css-1d391kg, .css-1lcbmhc {
+        background-color: #0a0a1a !important;
+        border-right: 1px solid #ff00d4;
+    }
 
-@keyframes gridMove {
-    0% { transform: perspective(500px) rotateX(60deg) translateY(0) translateZ(-200px); }
-    100% { transform: perspective(500px) rotateX(60deg) translateY(50px) translateZ(-200px); }
-}
+    /* Metrics Cards */
+    div[data-testid="stMetricValue"] {
+        font-size: 2rem;
+        color: #14f5ee;
+        font-family: 'Orbitron', sans-serif;
+        text-shadow: 0 0 5px #14f5ee;
+    }
+    div[data-testid="stMetricLabel"] {
+        color: #ff00d4;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    div[data-testid="stMetricDelta"] svg {
+        fill: #f9ca24;
+    }
+    div[data-testid="stMetricDelta"] {
+        color: #f9ca24 !important;
+    }
 
-/* Headings */
-h1, h2, h3, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
-    font-family: 'Orbitron', sans-serif !important;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-}
+    /* DataFrame styling */
+    .stDataFrame {
+        border: 1px solid rgba(20, 245, 238, 0.3);
+        border-radius: 5px;
+        box-shadow: 0 0 15px rgba(20, 245, 238, 0.1);
+    }
 
-h1 {
-    color: #fff;
-    text-shadow: 0 0 10px #14f5ee, 0 0 20px #14f5ee, 0 0 40px #14f5ee;
-    animation: pulseGlow 2s ease-in-out infinite alternate;
-}
+    /* Expander styling */
+    .streamlit-expanderHeader {
+        background-color: rgba(255, 0, 212, 0.1);
+        border: 1px solid #ff00d4;
+        border-radius: 5px;
+        color: #14f5ee;
+        font-family: 'Orbitron', sans-serif;
+    }
 
-@keyframes pulseGlow {
-    from { text-shadow: 0 0 10px #14f5ee, 0 0 20px #14f5ee; }
-    to { text-shadow: 0 0 20px #14f5ee, 0 0 30px #14f5ee, 0 0 40px #14f5ee; }
-}
+    /* Custom glowing divider */
+    hr {
+        border: 0;
+        height: 1px;
+        background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(20, 245, 238, 0.75), rgba(0, 0, 0, 0));
+        box-shadow: 0 0 10px rgba(20, 245, 238, 0.5);
+    }
 
-h2 {
-    color: #ff00d4;
-    text-shadow: 0 0 5px #ff00d4, 0 0 10px #ff00d4;
-    border-bottom: 2px solid rgba(255, 0, 212, 0.3);
-    padding-bottom: 5px;
-}
+    /* Buttons */
+    .stButton>button {
+        background-color: transparent;
+        color: #14f5ee;
+        border: 1px solid #14f5ee;
+        border-radius: 4px;
+        font-family: 'Orbitron', sans-serif;
+        text-transform: uppercase;
+        font-weight: bold;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 5px rgba(20, 245, 238, 0.5);
+    }
+    .stButton>button:hover {
+        background-color: rgba(20, 245, 238, 0.1);
+        border-color: #ff00d4;
+        color: #ff00d4;
+        box-shadow: 0 0 15px rgba(255, 0, 212, 0.8);
+        transform: translateY(-2px);
+    }
 
-/* Sidebar styling */
-[data-testid="stSidebar"] {
-    background: rgba(10, 10, 25, 0.8) !important;
-    backdrop-filter: blur(10px);
-    border-right: 1px solid rgba(20, 245, 238, 0.2);
-    box-shadow: 5px 0 15px rgba(0,0,0,0.5);
-}
+    /* Subheader specific */
+    .st-emotion-cache-12w0qpk.e1f1d6gn2 {
+         color: #f9ca24;
+         text-shadow: 0 0 5px #f9ca24;
+    }
 
-[data-testid="stSidebar"]::before {
-    content: 'SYSTEM ACTIVE';
-    position: absolute;
-    top: 10px; right: 10px;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 10px;
-    color: #14f5ee;
-    letter-spacing: 1px;
-    animation: blink 2s infinite;
-}
+    /* AI Confidence specific styling */
+    .ai-confidence-high { color: #14f5ee; text-shadow: 0 0 8px #14f5ee; }
+    .ai-confidence-mid { color: #f9ca24; text-shadow: 0 0 8px #f9ca24; }
+    .ai-confidence-low { color: #ff00d4; text-shadow: 0 0 8px #ff00d4; }
 
-@keyframes blink { 0%, 100% {opacity: 1;} 50% {opacity: 0.3;} }
-
-/* Inputs and Selectboxes */
-.stTextInput>div>div>input, .stSelectbox>div>div>div {
-    background-color: rgba(15, 15, 30, 0.6) !important;
-    border: 1px solid rgba(20, 245, 238, 0.3) !important;
-    color: #fff !important;
-    font-family: 'Rajdhani', sans-serif !important;
-    font-size: 1.1rem;
-    border-radius: 4px;
-    transition: all 0.3s ease;
-}
-
-.stTextInput>div>div>input:focus, .stSelectbox>div>div>div:focus {
-    border-color: #14f5ee !important;
-    box-shadow: 0 0 15px rgba(20, 245, 238, 0.4) !important;
-    transform: scale(1.02);
-}
-
-/* Buttons */
-.stButton>button {
-    background: linear-gradient(45deg, #14f5ee, #ff00d4);
-    border: none;
-    color: white;
-    font-family: 'Orbitron', sans-serif;
-    font-weight: 700;
-    letter-spacing: 1px;
-    padding: 10px 20px;
-    border-radius: 4px;
-    text-transform: uppercase;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    position: relative;
-    overflow: hidden;
-    z-index: 1;
-}
-
-.stButton>button::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(45deg, #ff00d4, #14f5ee);
-    z-index: -1;
-    transition: opacity 0.4s ease;
-    opacity: 0;
-}
-
-.stButton>button:hover {
-    transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 10px 20px rgba(255, 0, 212, 0.4), 0 0 15px rgba(20, 245, 238, 0.4);
-    color: white;
-}
-
-.stButton>button:hover::before {
-    opacity: 1;
-}
-
-.stButton>button:active {
-    transform: translateY(1px) scale(0.98);
-}
-
-/* Metrics Cards (3D Hover Effect) */
-[data-testid="stMetric"] {
-    background: rgba(15, 15, 30, 0.6);
-    border: 1px solid rgba(20, 245, 238, 0.2);
-    border-radius: 8px;
-    padding: 15px;
-    backdrop-filter: blur(5px);
-    transition: all 0.4s ease;
-    transform-style: preserve-3d;
-    perspective: 1000px;
-}
-
-[data-testid="stMetric"]:hover {
-    transform: translateY(-5px) rotateX(5deg) rotateY(-5deg);
-    border-color: #14f5ee;
-    box-shadow: -5px 10px 20px rgba(0,0,0,0.5), 0 0 15px rgba(20, 245, 238, 0.3);
-}
-
-[data-testid="stMetricValue"] {
-    font-family: 'Orbitron', sans-serif;
-    color: #fff;
-    text-shadow: 0 0 5px #ff00d4;
-}
-
-[data-testid="stMetricLabel"] {
-    color: #14f5ee;
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-/* Dataframe/Table */
-[data-testid="stDataFrame"] {
-    background: rgba(10, 10, 20, 0.7);
-    border: 1px solid rgba(255, 0, 212, 0.3);
-    border-radius: 8px;
-    padding: 10px;
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
-}
-
-/* Expanders */
-.streamlit-expanderHeader {
-    background-color: rgba(20, 245, 238, 0.05) !important;
-    border: 1px solid rgba(20, 245, 238, 0.3) !important;
-    border-radius: 4px;
-    font-family: 'Orbitron', sans-serif !important;
-    color: #14f5ee !important;
-    transition: all 0.3s ease;
-}
-
-.streamlit-expanderHeader:hover {
-    background-color: rgba(20, 245, 238, 0.1) !important;
-    border-color: #14f5ee !important;
-    box-shadow: 0 0 10px rgba(20, 245, 238, 0.3);
-}
-
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-::-webkit-scrollbar-track {
-    background: #050510;
-}
-::-webkit-scrollbar-thumb {
-    background: #14f5ee;
-    border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-    background: #ff00d4;
-}
-
-/* Alert/Warning Boxes */
-.stAlert {
-    background: rgba(255, 0, 212, 0.1) !important;
-    border: 1px solid #ff00d4 !important;
-    color: #fff !important;
-    border-radius: 4px;
-    border-left: 4px solid #ff00d4 !important;
-}
-
-/* Spinner */
-.stSpinner > div > div {
-    border-color: #14f5ee transparent #ff00d4 transparent !important;
-}
-
-/* Glitch Effect Text Utility */
-.glitch {
-    position: relative;
-    color: white;
-    font-size: 3rem;
-    font-family: 'Orbitron', sans-serif;
-    font-weight: 900;
-    text-transform: uppercase;
-    text-shadow: 0.05em 0 0 #14f5ee, -0.05em -0.05em 0 #ff00d4,
-                 0.025em 0.05em 0 #fff;
-    animation: glitch 1s infinite linear alternate-reverse;
-}
-
-@keyframes glitch {
-  0% { text-shadow: 0.05em 0 0 #14f5ee, -0.05em -0.05em 0 #ff00d4, 0.025em 0.05em 0 #fff; }
-  14% { text-shadow: 0.05em 0 0 #14f5ee, -0.05em -0.05em 0 #ff00d4, 0.025em 0.05em 0 #fff; }
-  15% { text-shadow: -0.05em -0.025em 0 #14f5ee, 0.025em 0.025em 0 #ff00d4, -0.05em -0.05em 0 #fff; }
-  49% { text-shadow: -0.05em -0.025em 0 #14f5ee, 0.025em 0.025em 0 #ff00d4, -0.05em -0.05em 0 #fff; }
-  50% { text-shadow: 0.025em 0.05em 0 #14f5ee, 0.05em 0 0 #ff00d4, 0 -0.05em 0 #fff; }
-  99% { text-shadow: 0.025em 0.05em 0 #14f5ee, 0.05em 0 0 #ff00d4, 0 -0.05em 0 #fff; }
-  100% { text-shadow: -0.025em 0 0 #14f5ee, -0.025em -0.025em 0 #ff00d4, -0.025em -0.05em 0 #fff; }
-}
-
-/* Floating Orbs */
-.orb {
-    position: fixed;
-    border-radius: 50%;
-    filter: blur(50px);
-    z-index: -1;
-    animation: floatOrb 10s ease-in-out infinite alternate;
-}
-.orb1 { top: 10%; left: 20%; width: 200px; height: 200px; background: rgba(20, 245, 238, 0.15); animation-delay: 0s; }
-.orb2 { bottom: 20%; right: 10%; width: 300px; height: 300px; background: rgba(255, 0, 212, 0.1); animation-delay: -3s; }
-.orb3 { top: 50%; left: 60%; width: 150px; height: 150px; background: rgba(138, 43, 226, 0.15); animation-delay: -6s; }
-
-@keyframes floatOrb {
-    0% { transform: translate(0, 0) scale(1); }
-    100% { transform: translate(30px, 50px) scale(1.1); }
-}
-
-/* 3D Expanders */
-.streamlit-expander {
-    background: rgba(15, 15, 30, 0.4) !important;
-    border: 1px solid rgba(20, 245, 238, 0.2) !important;
-    border-radius: 8px;
-    margin-bottom: 15px;
-    transition: all 0.4s ease;
-    transform-style: preserve-3d;
-    perspective: 1000px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-}
-
-.streamlit-expander:hover {
-    transform: translateZ(10px);
-    border-color: rgba(255, 0, 212, 0.5) !important;
-    box-shadow: 0 10px 25px rgba(255, 0, 212, 0.2), inset 0 0 15px rgba(20, 245, 238, 0.1);
-}
-
-</style>
-
-<div class="orb orb1"></div>
-<div class="orb orb2"></div>
-<div class="orb orb3"></div>
-""",
+    </style>
+    """,
     unsafe_allow_html=True,
 )
 
-
-st.markdown(
-    '<div class="glitch" style="text-align: center; margin-bottom: 1rem;">NEONPULSE</div><h3 style="text-align: center; color: #14f5ee; letter-spacing: 5px;">CRYPTO MOMENTUM TERMINAL</h3>',
-    unsafe_allow_html=True,
-)
-st.markdown(
-    "<p style='text-align: center; font-size: 1.2rem; color: #a0a0a0;'>INITIALIZING QUANTITATIVE ANALYSIS PROTOCOLS...</p>",
-    unsafe_allow_html=True,
-)
-
-# Sidebar parameters
-st.sidebar.header("Settings")
-
-tickers_input = st.sidebar.text_input(
-    "Tickers (space-separated)", "BTC-USD ETH-USD SOL-USD"
-)
-tickers = [t.strip().upper() for t in tickers_input.split() if t.strip()]
-
-period = st.sidebar.selectbox("Period", ["1mo", "3mo", "6mo", "1y", "max"], index=2)
-interval = st.sidebar.selectbox("Interval", ["1h", "1d", "1wk"], index=1)
-
-use_mtf = st.sidebar.checkbox("Enable MTF (Multi-Timeframe) Analysis", value=False)
-run_backtest = st.sidebar.checkbox("Run Strategy Backtest", value=False)
-
-st.sidebar.markdown("---")
-st.sidebar.subheader("Strategy Parameters (RSI)")
-rsi_buy_min = st.sidebar.number_input("RSI Buy Min", value=40)
-rsi_buy_max = st.sidebar.number_input("RSI Buy Max", value=70)
-rsi_sell_min = st.sidebar.number_input("RSI Sell Min", value=30)
-rsi_sell_max = st.sidebar.number_input("RSI Sell Max", value=60)
-
-strategy_params = {
-    "rsi_buy_min": rsi_buy_min,
-    "rsi_buy_max": rsi_buy_max,
-    "rsi_sell_min": rsi_sell_min,
-    "rsi_sell_max": rsi_sell_max,
-    "rsi_strong_buy": 30,
-    "rsi_strong_sell": 70,
-}
+st.title("⚡ NeonPulse: AI Crypto Terminal")
+st.markdown("*Advanced Momentum Detection & Machine Learning Predictions*")
 
 
-def process_ticker(ticker, period, interval, run_backtest, strategy_params, use_mtf):
-    try:
-        fetcher = DataFetcher(ticker_symbol=ticker)
-        df = fetcher.fetch_historical_data(period=period, interval=interval)
+# --- SIDEBAR CONFIGURATION ---
+with st.sidebar:
+    st.image(
+        "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMjM1YzlkOGU4MjM2ZjY4ZjY4YmRjYzE2ZDZlNzY1MWRkODMwMjJjZiZlcD12MV9pbnRlcm5hbF9naWZzX2dpZklkJmN0PWc/JtBZm3Getg3dqxEX1E/giphy.gif",
+        use_container_width=True,
+    )
+    st.header("⚙️ System Config")
 
-        if df.empty:
-            return {"ticker": ticker, "error": True, "status": "No data"}
+    tickers_input = st.text_area(
+        "Target Assets (Comma separated)", "BTC-USD, ETH-USD, SOL-USD"
+    )
 
-        htf_df = pd.DataFrame()
-        if use_mtf:
-            htf_df = fetcher.fetch_htf_data(period=period, interval=interval)
-
-        indicators = MomentumIndicators(df, htf_df if use_mtf else None)
-        df_with_indicators = indicators.calculate_all()
-
-        generator = SignalGenerator(
-            data=df_with_indicators,
-            rsi_buy_min=strategy_params["rsi_buy_min"],
-            rsi_buy_max=strategy_params["rsi_buy_max"],
-            rsi_sell_min=strategy_params["rsi_sell_min"],
-            rsi_sell_max=strategy_params["rsi_sell_max"],
-            use_mtf=use_mtf,
+    col1, col2 = st.columns(2)
+    with col1:
+        period = st.selectbox(
+            "Time Horizon", ["1mo", "3mo", "6mo", "1y", "2y", "max"], index=3
+        )
+    with col2:
+        interval = st.selectbox(
+            "Resolution", ["1h", "1d", "1wk", "1mo"], index=1
         )
 
-        # Get df with signals for charting
-        df_with_signals = generator.generate_signals()
+    st.subheader("Neural Network & Risk")
+    use_mtf = st.checkbox(
+        "Multi-Timeframe Confluence (MTF)",
+        value=True,
+        help="Validates short-term signals against higher timeframe trend.",
+    )
+    run_backtest = st.checkbox(
+        "Monte Carlo Backtest Simulation",
+        value=True,
+        help="Run historical simulation with 1000 iteration Monte Carlo risk analysis.",
+    )
 
-        latest_signal = generator.get_latest_signal()
-        if not latest_signal:
-            return {"ticker": ticker, "error": True, "status": "No signals"}
+    st.divider()
+    analyze_button = st.button("🚀 INITIATE SCAN", use_container_width=True)
 
-        latest_signal["ticker"] = ticker
-        latest_signal["error"] = False
-        latest_signal["status"] = "Success"
-        latest_signal["df"] = df_with_signals
+# --- MAIN LOGIC ---
+if analyze_button:
+    tickers = [t.strip() for t in tickers_input.split(",") if t.strip()]
 
-        if run_backtest:
-            backtester = Backtester(df_with_signals)
-            bt_results = backtester.run_backtest()
-            latest_signal["backtest"] = bt_results
-
-        return latest_signal
-    except Exception as e:
-        return {"ticker": ticker, "error": True, "status": str(e)}
-
-
-if st.sidebar.button("Run Analysis", type="primary"):
     if not tickers:
-        st.warning("Please enter at least one ticker.")
+        st.error("⚠️ Please specify at least one target asset.")
         st.stop()
 
-    results = []
+    results_container = st.empty()
+    progress_bar = st.progress(0)
+    status_text = st.empty()
 
-    with st.spinner("Analyzing assets..."):
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = {
-                executor.submit(
-                    process_ticker,
-                    ticker,
-                    period,
-                    interval,
-                    run_backtest,
-                    strategy_params,
-                    use_mtf,
-                ): ticker
-                for ticker in tickers
+    successful_results = []
+    total_tickers = len(tickers)
+
+    def process_ticker(ticker):
+        try:
+            fetcher = DataFetcher(ticker_symbol=ticker)
+            df = fetcher.fetch_historical_data(period=period, interval=interval)
+
+            htf_df = None
+            if use_mtf:
+                htf_df = fetcher.fetch_htf_data(period=period, interval=interval)
+
+            if df.empty:
+                return {"ticker": ticker, "error": "No data available."}
+
+            indicators = MomentumIndicators(data=df, htf_data=htf_df)
+            df_with_indicators = indicators.calculate_all()
+
+            # Extract VPVR profile for charting before passing to signal generator
+            vpvr_profile = indicators.calculate_vpvr(df_with_indicators)['profile']
+
+            generator = SignalGenerator(data=df_with_indicators, use_mtf=use_mtf)
+            latest_signal = generator.get_latest_signal()
+
+            if not latest_signal:
+                return {"ticker": ticker, "error": "Failed to generate signals."}
+
+            result = {
+                "ticker": ticker,
+                "df": df_with_indicators,
+                "vpvr_profile": vpvr_profile,
+                **latest_signal,
             }
-            for future in concurrent.futures.as_completed(futures):
-                results.append(future.result())
 
-    results.sort(key=lambda x: x["ticker"])
+            if run_backtest:
+                df_signals = generator.generate_signals()
+                backtester = Backtester(data=df_signals)
+                bt_results = backtester.run()
+                result["backtest"] = bt_results
 
-    successful_results = [r for r in results if not r["error"]]
-    error_results = [r for r in results if r["error"]]
+            return result
+        except Exception as e:
+            return {"ticker": ticker, "error": str(e)}
 
-    if error_results:
-        st.error(
-            f"Failed to process: {', '.join([r['ticker'] for r in error_results])}"
-        )
+    # Execute Concurrently
+    with ThreadPoolExecutor(max_workers=min(10, total_tickers)) as executor:
+        futures = {executor.submit(process_ticker, t): t for t in tickers}
+        completed = 0
+        for future in futures:
+            res = future.result()
+            if "error" not in res:
+                successful_results.append(res)
+            completed += 1
+            progress_bar.progress(completed / total_tickers)
+            status_text.text(f"Scanning the matrix... {completed}/{total_tickers}")
+
+    progress_bar.empty()
+    status_text.empty()
 
     if not successful_results:
-        st.error("No valid data could be processed.")
+        st.error("🚨 System Failure: Could not establish connection to market data.")
         st.stop()
 
     # Portfolio Summary
-    st.header("📊 Portfolio Summary")
+    st.header("📊 AI Terminal Summary")
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
 
+    highest_ai = max(successful_results, key=lambda x: x.get("AI_Confidence", 0))
     highest_rsi = max(successful_results, key=lambda x: x["RSI"])
-    lowest_rsi = min(successful_results, key=lambda x: x["RSI"])
 
     buy_signals = [r for r in successful_results if "BUY" in r["Action"]]
     sell_signals = [r for r in successful_results if "SELL" in r["Action"]]
-    hold_signals = [r for r in successful_results if r["Action"] == "HOLD"]
 
     with col1:
-        st.metric("Highest RSI", f"{highest_rsi['ticker']} ({highest_rsi['RSI']:.1f})")
-        st.metric("Lowest RSI", f"{lowest_rsi['ticker']} ({lowest_rsi['RSI']:.1f})")
+        st.metric("Top AI Pick", f"{highest_ai['ticker']}", f"{highest_ai.get('AI_Confidence', 0):.1f}% Conf")
 
     with col2:
-        st.markdown(f"**📈 BUY Signals:** {len(buy_signals)}")
-        st.markdown(f"**📉 SELL Signals:** {len(sell_signals)}")
-        st.markdown(f"**⏳ HOLD Signals:** {len(hold_signals)}")
+        st.markdown(f"**📈 BUY Configs:** {len(buy_signals)}")
+        st.markdown(f"**📉 SELL Configs:** {len(sell_signals)}")
 
     with col3:
-        top_macd = sorted(
-            successful_results,
-            key=lambda x: x["MACD"] - x["MACD_Signal"],
-            reverse=True,
-        )[:2]
-        st.markdown("**🔥 Top MACD Momentum**")
-        for r in top_macd:
-            st.markdown(f"- {r['ticker']}")
+        st.metric("Highest RSI", f"{highest_rsi['ticker']}", f"{highest_rsi['RSI']:.1f}")
 
-    st.divider()
-
-    # Data Table
-    st.header("📋 Detailed Overview")
-
-    table_data = []
-    for r in successful_results:
-        row = {
-            "Ticker": r["ticker"],
-            "Price": f"${r['Price']:.2f}",
-            "RSI (14)": round(r["RSI"], 2),
-            "MACD": round(r["MACD"], 2),
-            "Signal": r["Action"],
-        }
-        if use_mtf:
-            row["HTF Trend"] = "BULL" if r.get("HTF_Trend", True) else "BEAR"
-
-        sl = r.get("Stop_Loss")
-        tp = r.get("Take_Profit")
-        if (
-            sl is not None
-            and tp is not None
-            and not math.isnan(sl)
-            and not math.isnan(tp)
-        ):
-            row["SL/TP"] = f"SL: ${sl:.2f} / TP: ${tp:.2f}"
-        else:
-            row["SL/TP"] = "-"
-
-        if run_backtest and "backtest" in r:
-            row["BT Return %"] = f"{r['backtest'].get('Return %', 0):.2f}%"
-            row["Win Rate %"] = f"{r['backtest'].get('Win Rate %', 0):.2f}%"
-
-        table_data.append(row)
-
-    st.dataframe(pd.DataFrame(table_data), use_container_width=True)
+    with col4:
+        top_mc = max(successful_results, key=lambda x: x.get("backtest", {}).get("MC Median Return %", 0)) if run_backtest and successful_results[0].get("backtest") else None
+        if top_mc:
+             st.metric("Best MC Return", f"{top_mc['ticker']}", f"{top_mc['backtest']['MC Median Return %']:.1f}%")
 
     st.divider()
 
     # Detailed Charts
-    st.header("📈 Asset Charts")
+    st.header("📈 Deep Tech Chart Analysis")
 
     for r in successful_results:
         df = r["df"]
         ticker = r["ticker"]
+        ai_conf = r.get("AI_Confidence", 50)
 
-        with st.expander(
-            f"{ticker} - {r['Action']} - Price: ${r['Price']:.2f}", expanded=True
-        ):
+        conf_class = "ai-confidence-high" if ai_conf > 60 else "ai-confidence-mid" if ai_conf >= 40 else "ai-confidence-low"
 
-            # Create subplots
+        with st.expander(f"{ticker} | SIGNAL: {r['Action']} | AI CONFIDENCE: {ai_conf:.1f}%", expanded=True):
+
+            st.markdown(f"<h3 style='text-align: center; margin-bottom: 0;'><span class='{conf_class}'>AI CONFIDENCE: {ai_conf:.1f}%</span></h3>", unsafe_allow_html=True)
+
+            # Create subplots including Volume Profile
             fig = make_subplots(
                 rows=3,
-                cols=1,
+                cols=2,
+                column_widths=[0.8, 0.2],
                 shared_xaxes=True,
                 vertical_spacing=0.05,
+                horizontal_spacing=0.01,
                 row_heights=[0.6, 0.2, 0.2],
+                specs=[[{"type": "xy"}, {"type": "xy"}],
+                       [{"type": "xy", "colspan": 2}, None],
+                       [{"type": "xy", "colspan": 2}, None]]
             )
 
-            # Candlestick chart
+            # --- Candlestick chart ---
             fig.add_trace(
                 go.Candlestick(
-                    x=df.index,
-                    open=df["Open"],
-                    high=df["High"],
-                    low=df["Low"],
-                    close=df["Close"],
+                    x=df.index, open=df["Open"], high=df["High"], low=df["Low"], close=df["Close"],
                     name="Price",
-                    increasing_line_color="#14f5ee",
-                    decreasing_line_color="#ff00d4",
-                    increasing_fillcolor="rgba(20, 245, 238, 0.4)",
-                    decreasing_fillcolor="rgba(255, 0, 212, 0.4)",
+                    increasing_line_color="#14f5ee", decreasing_line_color="#ff00d4",
+                    increasing_fillcolor="rgba(20, 245, 238, 0.4)", decreasing_fillcolor="rgba(255, 0, 212, 0.4)",
                 ),
-                row=1,
-                col=1,
+                row=1, col=1,
             )
 
-            # Bollinger Bands
-            if "BB_High" in df.columns and "BB_Low" in df.columns:
-                fig.add_trace(
-                    go.Scatter(
-                        x=df.index,
-                        y=df["BB_High"],
-                        line=dict(color="rgba(20, 245, 238, 0.5)", width=1, dash="dot"),
-                        name="BB High",
-                    ),
-                    row=1,
-                    col=1,
-                )
-                fig.add_trace(
-                    go.Scatter(
-                        x=df.index,
-                        y=df["BB_Low"],
-                        line=dict(color="rgba(20, 245, 238, 0.5)", width=1, dash="dot"),
-                        name="BB Low",
-                        fill="tonexty",
-                        fillcolor="rgba(20, 245, 238, 0.05)",
-                    ),
-                    row=1,
-                    col=1,
-                )
+            # --- WORLD CLASS FEATURE: Ichimoku Cloud Plotting ---
+            if "Ichimoku_SpanA" in df.columns and "Ichimoku_SpanB" in df.columns:
+                 # Standard Ichimoku plots are shifted 26 periods forward, but we align them with price here for display.
+                 # To draw a filled cloud, we add Span A and Span B.
+                 fig.add_trace(go.Scatter(x=df.index, y=df['Ichimoku_SpanA'], line=dict(color='rgba(20, 245, 238, 0.3)', width=1), name='Span A'), row=1, col=1)
+                 fig.add_trace(go.Scatter(x=df.index, y=df['Ichimoku_SpanB'], line=dict(color='rgba(255, 0, 212, 0.3)', width=1), fill='tonexty', fillcolor='rgba(100, 100, 100, 0.1)', name='Span B'), row=1, col=1)
 
-            # Moving averages
-            if "SMA_20" in df.columns:
-                fig.add_trace(
-                    go.Scatter(
-                        x=df.index,
-                        y=df["SMA_20"],
-                        line=dict(color="#f9ca24", width=1.5),
-                        name="SMA 20",
-                    ),
-                    row=1,
-                    col=1,
-                )
-            if "SMA_50" in df.columns:
-                fig.add_trace(
-                    go.Scatter(
-                        x=df.index,
-                        y=df["SMA_50"],
-                        line=dict(color="#686de0", width=1.5),
-                        name="SMA 50",
-                    ),
-                    row=1,
-                    col=1,
-                )
+            # --- WORLD CLASS FEATURE: Fibonacci Retracements ---
+            if "Fib_0" in df.columns:
+                last_fib0 = df['Fib_0'].iloc[-1]
+                last_fib5 = df['Fib_0.5'].iloc[-1]
+                last_fib1 = df['Fib_1'].iloc[-1]
 
-            # RSI
+                fig.add_hline(y=last_fib0, line_dash="dash", line_color="red", opacity=0.3, row=1, col=1, annotation_text="Fib 0")
+                fig.add_hline(y=last_fib5, line_dash="dash", line_color="yellow", opacity=0.3, row=1, col=1, annotation_text="Fib 0.5")
+                fig.add_hline(y=last_fib1, line_dash="dash", line_color="green", opacity=0.3, row=1, col=1, annotation_text="Fib 1")
+
+            # --- WORLD CLASS FEATURE: Volume Profile (VPVR) ---
+            vpvr_profile = r.get("vpvr_profile", pd.DataFrame())
+            if not vpvr_profile.empty:
+                 y_vals = (vpvr_profile['Price_Start'] + vpvr_profile['Price_End']) / 2
+                 fig.add_trace(
+                     go.Bar(y=y_vals, x=vpvr_profile['Volume'], orientation='h', marker_color='rgba(249, 202, 36, 0.3)', showlegend=False),
+                     row=1, col=2
+                 )
+                 # Add POC Line on Main Chart
+                 poc_price = r.get('VPVR_POC', 0)
+                 if poc_price > 0:
+                      fig.add_hline(y=poc_price, line_width=2, line_color="#f9ca24", row=1, col=1, annotation_text="POC")
+
+            # --- RSI ---
             if "RSI_14" in df.columns:
-                fig.add_trace(
-                    go.Scatter(
-                        x=df.index,
-                        y=df["RSI_14"],
-                        line=dict(color="#ff00d4", width=2),
-                        name="RSI 14",
-                    ),
-                    row=2,
-                    col=1,
-                )
-                # RSI Overbought/Oversold lines
-                fig.add_hline(
-                    y=70,
-                    line_dash="dash",
-                    line_color="#ff00d4",
-                    opacity=0.5,
-                    row=2,
-                    col=1,
-                )
-                fig.add_hline(
-                    y=30,
-                    line_dash="dash",
-                    line_color="#14f5ee",
-                    opacity=0.5,
-                    row=2,
-                    col=1,
-                )
+                fig.add_trace(go.Scatter(x=df.index, y=df["RSI_14"], line=dict(color="#ff00d4", width=2), name="RSI 14"), row=2, col=1)
+                fig.add_hline(y=70, line_dash="dash", line_color="#ff00d4", opacity=0.5, row=2, col=1)
+                fig.add_hline(y=30, line_dash="dash", line_color="#14f5ee", opacity=0.5, row=2, col=1)
 
-            # MACD
+            # --- MACD ---
             if "MACD" in df.columns and "MACD_Signal" in df.columns:
-                fig.add_trace(
-                    go.Scatter(
-                        x=df.index,
-                        y=df["MACD"],
-                        line=dict(color="#686de0", width=1.5),
-                        name="MACD",
-                    ),
-                    row=3,
-                    col=1,
-                )
-                fig.add_trace(
-                    go.Scatter(
-                        x=df.index,
-                        y=df["MACD_Signal"],
-                        line=dict(color="#f9ca24", width=1.5),
-                        name="Signal",
-                    ),
-                    row=3,
-                    col=1,
-                )
-
-                # MACD Histogram
+                fig.add_trace(go.Scatter(x=df.index, y=df["MACD"], line=dict(color="#686de0", width=1.5), name="MACD"), row=3, col=1)
+                fig.add_trace(go.Scatter(x=df.index, y=df["MACD_Signal"], line=dict(color="#f9ca24", width=1.5), name="Signal"), row=3, col=1)
                 macd_hist = df["MACD"] - df["MACD_Signal"]
                 colors = ["#14f5ee" if val >= 0 else "#ff00d4" for val in macd_hist]
-                fig.add_trace(
-                    go.Bar(
-                        x=df.index, y=macd_hist, marker_color=colors, name="Histogram"
-                    ),
-                    row=3,
-                    col=1,
-                )
+                fig.add_trace(go.Bar(x=df.index, y=macd_hist, marker_color=colors, name="Histogram"), row=3, col=1)
 
             # Update layout
             fig.update_layout(
-                title=dict(
-                    text=f"<b>{ticker} TECHNICAL ANALYSIS</b>",
-                    font=dict(family="Orbitron", size=20, color="#14f5ee"),
-                ),
+                title=dict(text=f"<b>{ticker} AI & TECHNICAL ANALYSIS</b>", font=dict(family="Orbitron", size=20, color="#14f5ee")),
                 xaxis_rangeslider_visible=False,
-                height=800,
+                height=900,
                 template="plotly_dark",
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(15, 15, 30, 0.6)",
                 font=dict(family="Rajdhani", color="#e0e0e0", size=14),
-                hoverlabel=dict(
-                    bgcolor="rgba(10, 10, 25, 0.9)",
-                    font_size=16,
-                    font_family="Rajdhani",
-                ),
-                margin=dict(l=50, r=50, t=60, b=50),
-                legend=dict(
-                    orientation="h",
-                    yanchor="bottom",
-                    y=1.02,
-                    xanchor="right",
-                    x=1,
-                    font=dict(family="Rajdhani", color="#14f5ee"),
-                ),
+                hovermode="x unified",
+                margin=dict(l=20, r=20, t=60, b=20),
             )
 
-            # Update axes for all subplots
-            fig.update_xaxes(
-                showgrid=True,
-                gridwidth=1,
-                gridcolor="rgba(20, 245, 238, 0.1)",
-                zeroline=False,
-                showline=True,
-                linewidth=1,
-                linecolor="rgba(20, 245, 238, 0.3)",
-            )
-            fig.update_yaxes(
-                showgrid=True,
-                gridwidth=1,
-                gridcolor="rgba(20, 245, 238, 0.1)",
-                zeroline=False,
-                showline=True,
-                linewidth=1,
-                linecolor="rgba(20, 245, 238, 0.3)",
-            )
+            # Hide axes for VPVR
+            fig.update_xaxes(showticklabels=False, showgrid=False, zeroline=False, row=1, col=2)
+            fig.update_yaxes(showticklabels=False, showgrid=False, zeroline=False, row=1, col=2)
 
             st.plotly_chart(fig, use_container_width=True)
 
             # Additional info
-            col1, col2 = st.columns(2)
+            col1, col2, col3 = st.columns(3)
             with col1:
-                st.subheader("Signal Details")
-                st.write(f"**Action:** {r['Action']}")
+                st.subheader("Signal Logic")
+                st.write(f"**Final Action:** {r['Action']}")
+                st.write(f"**Ichimoku Bullish:** {'Yes' if r.get('Ichimoku_Bullish') else 'No'}")
                 if r.get("Stop_Loss") and not math.isnan(r.get("Stop_Loss")):
                     st.write(f"**Stop Loss:** ${r['Stop_Loss']:.2f}")
                 if r.get("Take_Profit") and not math.isnan(r.get("Take_Profit")):
                     st.write(f"**Take Profit:** ${r['Take_Profit']:.2f}")
 
+            with col2:
+                 st.subheader("Key Levels (VPVR/Fib)")
+                 st.write(f"**Volume POC:** ${r.get('VPVR_POC', 0):.2f}")
+                 st.write(f"**Fib High (0):** ${r.get('Fib_0', 0):.2f}")
+                 st.write(f"**Fib Mid (0.5):** ${r.get('Fib_0.5', 0):.2f}")
+                 st.write(f"**Fib Low (1):** ${r.get('Fib_1', 0):.2f}")
+
             if run_backtest and "backtest" in r:
-                with col2:
-                    st.subheader("Backtest Performance")
+                with col3:
+                    st.subheader("Monte Carlo Risk Profile")
                     bt = r["backtest"]
-                    st.write(f"**Total Return:** {bt.get('Return %', 0):.2f}%")
-                    st.write(f"**Max Drawdown:** {bt.get('Max Drawdown %', 0):.2f}%")
+                    st.write(f"**Historical Return:** {bt.get('Return %', 0):.2f}%")
                     st.write(f"**Win Rate:** {bt.get('Win Rate %', 0):.2f}%")
-                    st.write(f"**Total Trades:** {bt.get('Total Trades', 0)}")
+                    st.write(f"**MC Median Return:** <span style='color:#14f5ee'>{bt.get('MC Median Return %', 0):.2f}%</span>", unsafe_allow_html=True)
+                    risk_color = "#ff00d4" if bt.get('Risk of Ruin %', 0) > 10 else "#f9ca24" if bt.get('Risk of Ruin %', 0) > 5 else "#14f5ee"
+                    st.write(f"**Risk of Ruin (>20% DD):** <span style='color:{risk_color}'>{bt.get('Risk of Ruin %', 0):.2f}%</span>", unsafe_allow_html=True)

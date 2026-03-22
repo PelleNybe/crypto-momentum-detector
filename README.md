@@ -1,4 +1,4 @@
-# ⚡ NeonPulse: Crypto Momentum Detector
+# ⚡ NeonPulse: Advanced AI Crypto Trading Terminal
 
 [![Tests](https://img.shields.io/github/actions/workflow/status/PelleNybe/crypto-momentum-detector/tests.yml?branch=main&label=tests&style=for-the-badge&logo=github)](https://github.com/PelleNybe/crypto-momentum-detector/actions)
 [![Python Version](https://img.shields.io/pypi/pyversions/crypto-momentum-detector.svg?style=for-the-badge&logo=python&logoColor=white)](https://pypi.org/project/crypto-momentum-detector/)
@@ -13,7 +13,8 @@
 
 <br/>
 
-<h2><b>⚡ A powerful, blazing-fast application to analyze cryptocurrency momentum, calculate technical indicators, and generate actionable trading signals with a jaw-dropping UI! ⚡</b></h2>
+<div align="center">
+<h2><b>⚡ A world-class, AI-powered application to analyze cryptocurrency momentum, run Monte Carlo simulations, and generate actionable trading signals with a jaw-dropping UI! ⚡</b></h2>
 
 <br/>
 
@@ -24,30 +25,23 @@
 <br/>
 <br/>
 
-## 🌟 Discover the Future of Trading Analysis
+## 🌟 Discover the Future of Algorithmic Trading
 
-Welcome to the **Crypto Momentum Detector**. Built for traders, developers, and crypto enthusiasts who demand **speed**, **precision**, and **beautiful aesthetics**.
+Welcome to the **NeonPulse AI Crypto Terminal**. Built for elite traders, quants, and crypto enthusiasts who demand **speed**, **machine learning precision**, and **beautiful aesthetics**.
 
-Whether you're a day trader hunting for quick setups or an investor looking for macro trend confirmations, this tool equips you with the heavy-lifting technical analysis so you can focus on executing winning strategies.
+Whether you're a day trader hunting for quick setups or a quant researching strategies, this tool equips you with state-of-the-art analysis so you can execute with absolute confidence.
 
 ---
 
-## 🚀 Key Features
+## 🚀 5 New World-Class Features
 
-*   **📊 Jaw-Dropping UI**: A beautifully crafted **NeonPulse** Streamlit application featuring a completely unique **Deep Tech 3D Cyberpunk Aesthetic**, interactive 3D elements, pure CSS animations, dynamic Plotly charts with custom themes, and real-time data tables.
-*   **📊 Historic & Real-Time Data**: Harness the power of `yfinance` to pull Open, High, Low, Close, and Volume data for *any* supported cryptocurrency pair (e.g., BTC-USD, ETH-USD, SOL-USD).
-*   **⚡ Blazing Fast Concurrency**: Say goodbye to waiting. We use Python's `ThreadPoolExecutor` to analyze multiple tickers simultaneously.
-*   **🧠 Advanced Technical Indicators**: Powered by the robust `ta` library, it calculates:
-    *   **RSI** (Relative Strength Index) - 14 periods
-    *   **MACD** (Moving Average Convergence Divergence)
-    *   **SMA & EMA** (Simple and Exponential Moving Averages) - 20 & 50 periods
-    *   **ATR** (Average True Range) - 14 periods
-    *   **Bollinger Bands**
-*   **🎯 Intelligent Signal Generation**: Get clear, un-biased trading recommendations: `BUY`, `SELL`, `HOLD`, `STRONG BUY`, and `STRONG SELL`.
-*   **🛡️ Dynamic Risk Management**: Never trade without a plan. Our engine automatically calculates ATR-based **Stop Loss (SL)** and **Take Profit (TP)** levels for every actionable setup.
-*   **🗺️ Multi-Timeframe (MTF) Analysis**: Enable this feature to validate short-term signals against macro trends. Don't trade against the big guys!
-*   **⏪ Backtesting Engine**: Test your theories before risking capital. Run simulations over historical data with customizable RSI thresholds and see detailed performance metrics (Win Rate, Max Drawdown, Return).
-*   **💾 Smart Parquet Caching**: Ultra-fast local caching using `pyarrow`/`fastparquet` to eliminate redundant API calls and prevent rate-limiting.
+1.  **🤖 Predictive AI Engine**: A built-in `RandomForestClassifier` analyzes 14+ technical factors to generate an **AI Confidence Score**, predicting the exact probability of a positive price move in the next period.
+2.  **📊 Volume Profile Visible Range (VPVR)**: Real-time calculation of the Point of Control (POC), highlighting the exact price levels where the most institutional volume was traded.
+3.  **☁️ Ichimoku Cloud Confluence**: Advanced Japanese trend-following logic using full Ichimoku Cloud state (Span A / Span B) as a mandatory confluence filter for signal generation.
+4.  **📐 Dynamic Fibonacci Levels**: Automatically plots real-time 100-period rolling Fibonacci retracement lines on your charts to identify hidden support and resistance.
+5.  **🎲 Monte Carlo Risk Profiling**: Don't just backtest. Our engine runs 1,000 randomized Monte Carlo simulations on your historical trades to calculate the **Risk of Ruin** (probability of a >20% drawdown) and true Median Return.
+
+*Plus all the legacy features like MTF (Multi-Timeframe) support, dynamic risk sizing (ATR SL/TP levels), blazing fast concurrent processing, and PyArrow/Parquet data caching!*
 
 ---
 
@@ -79,13 +73,13 @@ pip install pyarrow fastparquet
 
 ## 💻 Usage & Commands
 
-Run the new beautiful Streamlit UI:
+Run the new beautiful **Deep Tech / Cyberpunk** Streamlit UI:
 
 ```bash
 streamlit run app.py
 ```
 
-You can still run the CLI tool using `main.py` if you prefer the terminal.
+You can still run the CLI tool using `main.py` if you prefer the blazing-fast terminal execution.
 
 ### 🟢 Quick Start (CLI Default Run)
 Analyze the default tickers (BTC-USD, ETH-USD) with default settings (6 months period, 1 day interval):
@@ -99,8 +93,8 @@ Specify your own basket of altcoins, set the timeframe, export the results to a 
 python main.py --tickers SOL-USD ADA-USD DOT-USD --period 1y --interval 1wk --use-mtf --export signals.csv
 ```
 
-### 🟣 Strategy Backtesting (CLI)
-Want to know if your strategy actually works? Run a historical backtest and see detailed performance metrics:
+### 🟣 AI Monte Carlo Backtesting (CLI)
+Run a historical backtest through the Monte Carlo simulation engine and see detailed performance metrics including Median Return and Risk of Ruin:
 ```bash
 python main.py --backtest --period 1y --tickers BTC-USD
 ```
@@ -121,29 +115,6 @@ python main.py --backtest --period 1y --tickers BTC-USD
 | `--export` | File path to export the detailed results as a CSV | `--export my_trades.csv` |
 | `--backtest` | Flag to run a historical backtest and display performance | `--backtest` |
 | `--use-mtf` | Flag to enable Multi-Timeframe analysis to confirm macro trends | `--use-mtf` |
-
-</details>
-
-<br/>
-
-## 🧠 Behind the Scenes: Strategy Logic
-
-<details>
-<summary><b>📈 Click to dive into the trading engine logic 📉</b></summary>
-<br>
-
-*   **📈 Bullish / Buy Setup**:
-    *   RSI is rising (between default 40-70).
-    *   MACD is above its signal line (momentum shift).
-    *   Closing price is above the 20 EMA (short-term uptrend).
-    *   *(If `--use-mtf` is active)*: The higher timeframe trend is also definitively bullish.
-*   **📉 Bearish / Sell Setup**:
-    *   RSI is falling (between default 30-60).
-    *   MACD is below its signal line.
-    *   Closing price is below the 20 EMA.
-    *   *(If `--use-mtf` is active)*: The higher timeframe trend is bearish.
-*   **💥 Extreme Signals (Strong Buy / Sell)**: Extreme overbought (RSI > 70) or oversold (RSI < 30) conditions combined with sharp MACD reversals.
-*   **🛡️ Dynamic Risk Calculation**: Take Profit (TP) and Stop Loss (SL) levels aren't guessed. They are mathematically scaled based on the **Average True Range (ATR)** relative to the current closing price, providing a volatility-adjusted dynamic risk profile for every generated setup.
 
 </details>
 

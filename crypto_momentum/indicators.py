@@ -1,25 +1,73 @@
 import pandas as pd
 from ta.momentum import RSIIndicator
-from ta.trend import MACD, SMAIndicator, EMAIndicator
+from ta.trend import MACD, SMAIndicator, EMAIndicator, IchimokuIndicator
 from ta.volatility import BollingerBands, AverageTrueRange
-
+import numpy as np
 
 class MomentumIndicators:
     def __init__(self, data: pd.DataFrame, htf_data: pd.DataFrame = None):
-        """
-        Initializes the indicators with OHLCV data.
-
-        Args:
-            data (pd.DataFrame): Data containing at least a 'Close' column.
-            htf_data (pd.DataFrame): Optional higher timeframe data.
-        """
         self.data = data
         self.htf_data = htf_data
 
+    def calculate_vpvr(self, df: pd.DataFrame, bins: int = 50) -> dict:
+        """Calculates Volume Profile Visible Range (VPVR) to find the Point of Control (POC)."""
+        if df.empty or 'Volume' not in df.columns:
+            return {'poc_price': 0, 'profile': pd.DataFrame()}
+
+        # Use the most recent 100 periods for the "Visible Range"
+        recent_df = df.tail(100).copy()
+
+        min_price = recent_df['Low'].min()
+        max_price = recent_df['High'].max()
+
+        if pd.isna(min_price) or pd.isna(max_price) or min_price == max_price:
+             return {'poc_price': recent_df['Close'].iloc[-1] if not recent_df.empty else 0, 'profile': pd.DataFrame()}
+
+        price_bins = np.linspace(min_price, max_price, bins + 1)
+
+        # Calculate typical price for volume distribution
+        recent_df['Typical_Price'] = (recent_df['High'] + recent_df['Low'] + recent_df['Close']) / 3
+
+        # Digitize the typical prices into bins
+        bin_indices = np.digitize(recent_df['Typical_Price'], price_bins)
+
+        # Aggregate volume per bin
+        volume_profile = np.zeros(bins)
+        for i in range(len(recent_df)):
+            bin_idx = bin_indices[i] - 1  # -1 because digitize is 1-indexed
+            if 0 <= bin_idx < bins:
+                volume_profile[bin_idx] += recent_df['Volume'].iloc[i]
+
+        # Find Point of Control (POC) - the bin with the highest volume
+        poc_idx = np.argmax(volume_profile)
+        poc_price = (price_bins[poc_idx] + price_bins[poc_idx + 1]) / 2
+
+        profile_df = pd.DataFrame({
+            'Price_Start': price_bins[:-1],
+            'Price_End': price_bins[1:],
+            'Volume': volume_profile
+        })
+
+        return {'poc_price': poc_price, 'profile': profile_df}
+
+    def calculate_fibonacci_retracements(self, df: pd.DataFrame, period: int = 100) -> pd.DataFrame:
+        """Calculates dynamic Fibonacci retracement levels based on a rolling high/low window."""
+        rolling_high = df['High'].rolling(window=period, min_periods=10).max()
+        rolling_low = df['Low'].rolling(window=period, min_periods=10).min()
+
+        diff = rolling_high - rolling_low
+
+        df['Fib_0'] = rolling_high
+        df['Fib_0.236'] = rolling_high - 0.236 * diff
+        df['Fib_0.382'] = rolling_high - 0.382 * diff
+        df['Fib_0.5'] = rolling_high - 0.5 * diff
+        df['Fib_0.618'] = rolling_high - 0.618 * diff
+        df['Fib_0.786'] = rolling_high - 0.786 * diff
+        df['Fib_1'] = rolling_low
+
+        return df
+
     def calculate_all(self) -> pd.DataFrame:
-        """
-        Calculates a suite of momentum and trend indicators.
-        """
         if self.data is None or self.data.empty or "Close" not in self.data.columns:
             return self.data
 
@@ -28,80 +76,81 @@ class MomentumIndicators:
         high = df.get("High", df["Close"])
         low = df.get("Low", df["Close"])
 
-        # 1. Relative Strength Index (RSI) - standard 14 period
         rsi = RSIIndicator(close=close, window=14)
         df["RSI_14"] = rsi.rsi()
 
-        # 2. Moving Average Convergence Divergence (MACD)
         macd = MACD(close=close, window_slow=26, window_fast=12, window_sign=9)
         df["MACD"] = macd.macd()
         df["MACD_Signal"] = macd.macd_signal()
         df["MACD_Hist"] = macd.macd_diff()
 
-        # 3. Simple Moving Averages (SMA) - 20 and 50 period
         sma_20 = SMAIndicator(close=close, window=20)
         df["SMA_20"] = sma_20.sma_indicator()
 
         sma_50 = SMAIndicator(close=close, window=50)
         df["SMA_50"] = sma_50.sma_indicator()
 
-        # 4. Bollinger Bands (20 period, 2 std dev)
         bollinger = BollingerBands(close=close, window=20, window_dev=2)
         df["BB_High"] = bollinger.bollinger_hband()
         df["BB_Low"] = bollinger.bollinger_lband()
         df["BB_Mid"] = bollinger.bollinger_mavg()
 
-        # 5. Exponential Moving Averages (EMA) - 20 and 50 period
         ema_20 = EMAIndicator(close=close, window=20)
         df["EMA_20"] = ema_20.ema_indicator()
 
         ema_50 = EMAIndicator(close=close, window=50)
         df["EMA_50"] = ema_50.ema_indicator()
 
-        # 6. Average True Range (ATR) - standard 14 period
         atr = AverageTrueRange(high=high, low=low, close=close, window=14)
         df["ATR_14"] = atr.average_true_range()
 
-        # Calculate HTF indicators if HTF data exists
+        # --- NEW WORLD CLASS FEATURE 1: Ichimoku Cloud ---
+        try:
+            ichimoku = IchimokuIndicator(high=high, low=low, window1=9, window2=26, window3=52)
+            df['Ichimoku_Conv'] = ichimoku.ichimoku_conversion_line()
+            df['Ichimoku_Base'] = ichimoku.ichimoku_base_line()
+            df['Ichimoku_SpanA'] = ichimoku.ichimoku_a()
+            df['Ichimoku_SpanB'] = ichimoku.ichimoku_b()
+
+            # Identify cloud trend: Price above cloud = Bullish, below = Bearish
+            # Note: SpanA and SpanB are shifted forward by 26 periods in traditional plotting,
+            # but ta library returns them aligned with the current price for easier boolean comparison against close.
+            df['Ichimoku_Bullish'] = (close > df['Ichimoku_SpanA']) & (close > df['Ichimoku_SpanB'])
+            df['Ichimoku_Bearish'] = (close < df['Ichimoku_SpanA']) & (close < df['Ichimoku_SpanB'])
+        except Exception as e:
+            df['Ichimoku_Bullish'] = False
+            df['Ichimoku_Bearish'] = False
+
+        # --- NEW WORLD CLASS FEATURE 2: Dynamic Fibonacci Retracements ---
+        df = self.calculate_fibonacci_retracements(df, period=100)
+
+        # --- NEW WORLD CLASS FEATURE 3: Volume Profile (VPVR) ---
+        vpvr_data = self.calculate_vpvr(df)
+        df['VPVR_POC'] = vpvr_data['poc_price']
+
         if (
             self.htf_data is not None
             and not self.htf_data.empty
             and "Close" in self.htf_data.columns
         ):
             htf_df = self.htf_data.copy()
-
             htf_close = htf_df["Close"]
-
             htf_sma_20 = SMAIndicator(close=htf_close, window=20)
             htf_df["SMA_20"] = htf_sma_20.sma_indicator()
-
             htf_sma_50 = SMAIndicator(close=htf_close, window=50)
             htf_df["SMA_50"] = htf_sma_50.sma_indicator()
-
-            # Simple trend identification on HTF: SMA 20 > SMA 50
             htf_df["HTF_Trend"] = htf_df["SMA_20"] > htf_df["SMA_50"]
-
-            # Since index is dates, we want to align HTF trend with the lower timeframe
-            # Forward fill the HTF values to the LTF index
-            # Align the HTF trend by reindexing and forward filling
-
-            # Extract just the trend column
             htf_trend_series = htf_df[["HTF_Trend"]].copy()
 
-            # Ensure timezones match if both have them, or remove them
             if df.index.tz is not None and htf_trend_series.index.tz is not None:
                 if df.index.tz != htf_trend_series.index.tz:
-                    htf_trend_series.index = htf_trend_series.index.tz_convert(
-                        df.index.tz
-                    )
+                    htf_trend_series.index = htf_trend_series.index.tz_convert(df.index.tz)
             elif df.index.tz is not None and htf_trend_series.index.tz is None:
                 htf_trend_series.index = htf_trend_series.index.tz_localize(df.index.tz)
             elif df.index.tz is None and htf_trend_series.index.tz is not None:
                 df.index = df.index.tz_localize(htf_trend_series.index.tz)
 
-            # Merge HTF trend into df
             try:
-                # Merge using merge_asof requires sorted indices
                 df = df.sort_index()
                 htf_trend_series = htf_trend_series.sort_index()
                 df = pd.merge_asof(
@@ -113,9 +162,8 @@ class MomentumIndicators:
                 )
                 df["HTF_Trend"] = df["HTF_Trend"].fillna(True)
             except Exception as e:
-                print(f"Error merging HTF data: {e}")
                 df["HTF_Trend"] = True
         else:
-            df["HTF_Trend"] = True  # Default to true if no HTF data available
+            df["HTF_Trend"] = True
 
         return df
