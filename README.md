@@ -1,4 +1,4 @@
-# ⚡ Crypto Momentum Detector
+# ⚡ NeonPulse: Crypto Momentum Detector
 
 [![Tests](https://img.shields.io/github/actions/workflow/status/PelleNybe/crypto-momentum-detector/tests.yml?branch=main&label=tests&style=for-the-badge&logo=github)](https://github.com/PelleNybe/crypto-momentum-detector/actions)
 [![Python Version](https://img.shields.io/pypi/pyversions/crypto-momentum-detector.svg?style=for-the-badge&logo=python&logoColor=white)](https://pypi.org/project/crypto-momentum-detector/)
@@ -34,7 +34,7 @@ Whether you're a day trader hunting for quick setups or an investor looking for 
 
 ## 🚀 Key Features
 
-*   **📊 Jaw-Dropping UI**: A beautifully crafted Streamlit application featuring interactive, dynamic Plotly charts and real-time data tables.
+*   **📊 Jaw-Dropping UI**: A beautifully crafted **NeonPulse** Streamlit application featuring a completely unique **Deep Tech 3D Cyberpunk Aesthetic**, interactive 3D elements, pure CSS animations, dynamic Plotly charts with custom themes, and real-time data tables.
 *   **📊 Historic & Real-Time Data**: Harness the power of `yfinance` to pull Open, High, Low, Close, and Volume data for *any* supported cryptocurrency pair (e.g., BTC-USD, ETH-USD, SOL-USD).
 *   **⚡ Blazing Fast Concurrency**: Say goodbye to waiting. We use Python's `ThreadPoolExecutor` to analyze multiple tickers simultaneously.
 *   **🧠 Advanced Technical Indicators**: Powered by the robust `ta` library, it calculates:
