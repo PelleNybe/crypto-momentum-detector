@@ -1,4 +1,5 @@
 import pandas as pd
+from crypto_momentum.ai_predictor import AIPredictor
 
 
 class SignalGenerator:
@@ -56,9 +57,18 @@ class SignalGenerator:
         macd_signal = df["MACD_Signal"]
         close = df["Close"]
         sma_20 = df["SMA_20"]
+        ema_50 = df["EMA_50"]
         ema_20 = df["EMA_20"]
         bb_low = df["BB_Low"]
         bb_high = df["BB_High"]
+
+        # Optional Ichimoku Confluence Check
+        if "Ichimoku_Bullish" in df.columns:
+            ichimoku_bullish = df["Ichimoku_Bullish"]
+            ichimoku_bearish = df["Ichimoku_Bearish"]
+        else:
+            ichimoku_bullish = pd.Series(True, index=df.index)
+            ichimoku_bearish = pd.Series(True, index=df.index)
 
         if "HTF_Trend" in df.columns and self.use_mtf:
             htf_bullish = df["HTF_Trend"] == True
@@ -73,6 +83,7 @@ class SignalGenerator:
             & (macd > macd_signal)
             & (close > ema_20)
             & htf_bullish
+            & (ichimoku_bullish | (close > ema_50))  # Added confluence check
         )
         is_bearish = (
             (rsi < self.rsi_sell_max)
@@ -80,6 +91,7 @@ class SignalGenerator:
             & (macd < macd_signal)
             & (close < ema_20)
             & htf_bearish
+            & (ichimoku_bearish | (close < ema_50))  # Added confluence check
         )
 
         strong_buy_cond = (
@@ -129,6 +141,10 @@ class SignalGenerator:
         if df_with_signals.empty or "Signal" not in df_with_signals.columns:
             return {}
 
+        # Get AI Prediction
+        predictor = AIPredictor(df_with_signals)
+        ai_confidence = predictor.train_and_predict()
+
         latest = df_with_signals.iloc[-1]
 
         date_str = (
@@ -137,7 +153,6 @@ class SignalGenerator:
             else str(df_with_signals.index[-1])
         )
 
-        # Get last 14 days of prices for sparkline
         sparkline_data = df_with_signals["Close"].tail(14).tolist()
 
         return {
@@ -158,4 +173,12 @@ class SignalGenerator:
             "Stop_Loss": latest.get("Stop_Loss", float("nan")),
             "Take_Profit": latest.get("Take_Profit", float("nan")),
             "Sparkline_Data": sparkline_data,
+            # NEW FEATURES
+            "AI_Confidence": ai_confidence,
+            "VPVR_POC": latest.get("VPVR_POC", 0),
+            "Ichimoku_Bullish": latest.get("Ichimoku_Bullish", False),
+            "Ichimoku_Bearish": latest.get("Ichimoku_Bearish", False),
+            "Fib_0": latest.get("Fib_0", 0),
+            "Fib_0.5": latest.get("Fib_0.5", 0),
+            "Fib_1": latest.get("Fib_1", 0),
         }

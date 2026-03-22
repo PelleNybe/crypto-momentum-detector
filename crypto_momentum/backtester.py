@@ -13,15 +13,60 @@ class Backtester:
         fee_rate: float = 0.001,
         slippage: float = 0.0005,
         position_size: float = 1.0,
+        mc_simulations: int = 1000,
     ):
         """
-        Initializes the Backtester.
+        Initializes the Backtester with Monte Carlo capabilities.
         """
         self.data = data
         self.initial_balance = initial_balance
         self.fee_rate = fee_rate
         self.slippage = slippage
         self.position_size = position_size
+        self.mc_simulations = mc_simulations
+
+    def _run_monte_carlo(self, trades: list) -> dict:
+        """
+        Runs Monte Carlo simulations by resampling the historical trades.
+        """
+        if not trades or len(trades) < 5:
+            return {"MC Median Return %": 0.0, "Risk of Ruin %": 0.0}
+
+        sim_returns = []
+        ruin_count = 0
+        ruin_threshold = 0.8  # 20% drawdown limit
+
+        for _ in range(self.mc_simulations):
+            # Resample with replacement
+            sim_trades = np.random.choice(trades, size=len(trades), replace=True)
+
+            sim_balance = self.initial_balance
+            max_balance = sim_balance
+            ruin = False
+
+            for t_return in sim_trades:
+                trade_amount = sim_balance * self.position_size
+                net_profit = trade_amount * t_return
+                sim_balance += net_profit
+
+                if sim_balance > max_balance:
+                    max_balance = sim_balance
+                elif sim_balance < max_balance * ruin_threshold:
+                    ruin = True
+                    break  # hit max drawdown limit
+
+            if ruin:
+                ruin_count += 1
+
+            sim_return_pct = (
+                (sim_balance - self.initial_balance) / self.initial_balance
+            ) * 100
+            sim_returns.append(sim_return_pct)
+
+        median_return = np.median(sim_returns)
+        risk_of_ruin = (ruin_count / self.mc_simulations) * 100
+
+        return {"MC Median Return %": median_return, "Risk of Ruin %": risk_of_ruin}
 
     def run(self) -> dict:
         """
@@ -104,6 +149,9 @@ class Backtester:
         winning_trades = [t for t in trades if t > 0]
         win_rate = (len(winning_trades) / len(trades) * 100) if trades else 0.0
 
+        # --- NEW WORLD CLASS FEATURE 4: Monte Carlo Analysis ---
+        mc_results = self._run_monte_carlo(trades)
+
         return {
             "Initial Balance": self.initial_balance,
             "Final Balance": final_balance,
@@ -111,4 +159,6 @@ class Backtester:
             "Max Drawdown %": max_drawdown,
             "Win Rate %": win_rate,
             "Total Trades": len(trades),
+            "MC Median Return %": mc_results["MC Median Return %"],
+            "Risk of Ruin %": mc_results["Risk of Ruin %"],
         }
