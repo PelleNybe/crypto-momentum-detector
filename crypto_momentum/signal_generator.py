@@ -114,11 +114,13 @@ class SignalGenerator:
         df.loc[valid_mask & strong_buy_cond, "Signal"] = "STRONG BUY"
         df.loc[valid_mask & strong_sell_cond, "Signal"] = "STRONG SELL"
 
+
         df["Stop_Loss"] = float("nan")
         df["Take_Profit"] = float("nan")
 
         buy_mask = df["Signal"].isin(["BUY", "STRONG BUY"])
-        df.loc[buy_mask, "Stop_Loss"] = df.loc[buy_mask, "Close"] - (
+        # If we have Chandelier Long, use it, else fallback
+        df.loc[buy_mask, "Stop_Loss"] = df.loc[buy_mask, "Chandelier_Long"] if "Chandelier_Long" in df.columns else df.loc[buy_mask, "Close"] - (
             df.loc[buy_mask, "ATR_14"] * self.atr_sl_multiplier
         )
         df.loc[buy_mask, "Take_Profit"] = df.loc[buy_mask, "Close"] + (
@@ -126,7 +128,7 @@ class SignalGenerator:
         )
 
         sell_mask = df["Signal"].isin(["SELL", "STRONG SELL"])
-        df.loc[sell_mask, "Stop_Loss"] = df.loc[sell_mask, "Close"] + (
+        df.loc[sell_mask, "Stop_Loss"] = df.loc[sell_mask, "Chandelier_Short"] if "Chandelier_Short" in df.columns else df.loc[sell_mask, "Close"] + (
             df.loc[sell_mask, "ATR_14"] * self.atr_sl_multiplier
         )
         df.loc[sell_mask, "Take_Profit"] = df.loc[sell_mask, "Close"] - (
@@ -181,4 +183,12 @@ class SignalGenerator:
             "Fib_0": latest.get("Fib_0", 0),
             "Fib_0.5": latest.get("Fib_0.5", 0),
             "Fib_1": latest.get("Fib_1", 0),
+            "OBV_Bullish_Div": latest.get("OBV_Bullish_Div", False),
+            "OBV_Bearish_Div": latest.get("OBV_Bearish_Div", False),
+            "Pattern": latest.get("Pattern", "None"),
+            "Chandelier_Long": latest.get("Chandelier_Long", float("nan")),
+            "Chandelier_Short": latest.get("Chandelier_Short", float("nan")),
+            "Market_Regime": latest.get("Market_Regime", "Ranging"),
+            "Stoch_Bullish_Cross": latest.get("Stoch_Bullish_Cross", False),
+            "Stoch_Bearish_Cross": latest.get("Stoch_Bearish_Cross", False)
         }

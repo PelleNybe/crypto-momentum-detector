@@ -521,7 +521,7 @@ if analyze_button:
             st.plotly_chart(fig, use_container_width=True)
 
             # Additional info
-            col1, col2, col3 = st.columns(3)
+            col1, col2, col3, col4 = st.columns(4)
             with col1:
                 st.subheader("Signal Logic")
                 st.write(f"**Final Action:** {r['Action']}")
@@ -533,7 +533,15 @@ if analyze_button:
                 if r.get("Take_Profit") and not math.isnan(r.get("Take_Profit")):
                     st.write(f"**Take Profit:** ${r['Take_Profit']:.2f}")
 
+
             with col2:
+                st.subheader("Market Dynamics")
+                st.write(f"**Regime:** {r.get('Market_Regime', 'N/A')}")
+                st.write(f"**Pattern:** {r.get('Pattern', 'None')}")
+                st.write(f"**OBV Bull Div:** {'Yes' if r.get('OBV_Bullish_Div') else 'No'}")
+                st.write(f"**StochRSI Cross:** {'Bullish' if r.get('Stoch_Bullish_Cross') else ('Bearish' if r.get('Stoch_Bearish_Cross') else 'None')}")
+
+            with col3:
                 st.subheader("Key Levels (VPVR/Fib)")
                 st.write(f"**Volume POC:** ${r.get('VPVR_POC', 0):.2f}")
                 st.write(f"**Fib High (0):** ${r.get('Fib_0', 0):.2f}")
@@ -541,7 +549,7 @@ if analyze_button:
                 st.write(f"**Fib Low (1):** ${r.get('Fib_1', 0):.2f}")
 
             if run_backtest and "backtest" in r:
-                with col3:
+                with col4:
                     st.subheader("Monte Carlo Risk Profile")
                     bt = r["backtest"]
                     st.write(f"**Historical Return:** {bt.get('Return %', 0):.2f}%")

@@ -1,9 +1,9 @@
 import pandas as pd
-from ta.momentum import RSIIndicator
-from ta.trend import MACD, SMAIndicator, EMAIndicator, IchimokuIndicator
+from ta.momentum import RSIIndicator, StochRSIIndicator
+from ta.trend import MACD, SMAIndicator, EMAIndicator, IchimokuIndicator, ADXIndicator
 from ta.volatility import BollingerBands, AverageTrueRange
+from ta.volume import OnBalanceVolumeIndicator
 import numpy as np
-
 
 class MomentumIndicators:
     def __init__(self, data: pd.DataFrame, htf_data: pd.DataFrame = None):
@@ -15,9 +15,7 @@ class MomentumIndicators:
         if df.empty or "Volume" not in df.columns:
             return {"poc_price": 0, "profile": pd.DataFrame()}
 
-        # Use the most recent 100 periods for the "Visible Range"
         recent_df = df.tail(100).copy()
-
         min_price = recent_df["Low"].min()
         max_price = recent_df["High"].max()
 
@@ -28,23 +26,15 @@ class MomentumIndicators:
             }
 
         price_bins = np.linspace(min_price, max_price, bins + 1)
-
-        # Calculate typical price for volume distribution
-        recent_df["Typical_Price"] = (
-            recent_df["High"] + recent_df["Low"] + recent_df["Close"]
-        ) / 3
-
-        # Digitize the typical prices into bins
+        recent_df["Typical_Price"] = (recent_df["High"] + recent_df["Low"] + recent_df["Close"]) / 3
         bin_indices = np.digitize(recent_df["Typical_Price"], price_bins)
 
-        # Aggregate volume per bin
         volume_profile = np.zeros(bins)
         for i in range(len(recent_df)):
-            bin_idx = bin_indices[i] - 1  # -1 because digitize is 1-indexed
+            bin_idx = bin_indices[i] - 1
             if 0 <= bin_idx < bins:
                 volume_profile[bin_idx] += recent_df["Volume"].iloc[i]
 
-        # Find Point of Control (POC) - the bin with the highest volume
         poc_idx = np.argmax(volume_profile)
         poc_price = (price_bins[poc_idx] + price_bins[poc_idx + 1]) / 2
 
@@ -55,12 +45,9 @@ class MomentumIndicators:
                 "Volume": volume_profile,
             }
         )
-
         return {"poc_price": poc_price, "profile": profile_df}
 
-    def calculate_fibonacci_retracements(
-        self, df: pd.DataFrame, period: int = 100
-    ) -> pd.DataFrame:
+    def calculate_fibonacci_retracements(self, df: pd.DataFrame, period: int = 100) -> pd.DataFrame:
         """Calculates dynamic Fibonacci retracement levels based on a rolling high/low window."""
         rolling_high = df["High"].rolling(window=period, min_periods=10).max()
         rolling_low = df["Low"].rolling(window=period, min_periods=10).min()
@@ -74,6 +61,70 @@ class MomentumIndicators:
         df["Fib_0.618"] = rolling_high - 0.618 * diff
         df["Fib_0.786"] = rolling_high - 0.786 * diff
         df["Fib_1"] = rolling_low
+
+        return df
+
+    def calculate_obv_divergence(self, df: pd.DataFrame, window: int = 14) -> pd.DataFrame:
+        if 'Volume' not in df.columns:
+            df['OBV'] = 0
+            df['OBV_Bullish_Div'] = False
+            df['OBV_Bearish_Div'] = False
+            return df
+
+        obv = OnBalanceVolumeIndicator(close=df["Close"], volume=df["Volume"])
+        df['OBV'] = obv.on_balance_volume()
+
+        price_roc = df['Close'].pct_change(window)
+        obv_roc = df['OBV'].pct_change(window)
+
+        df['OBV_Bullish_Div'] = (price_roc < 0) & (obv_roc > 0)
+        df['OBV_Bearish_Div'] = (price_roc > 0) & (obv_roc < 0)
+
+        return df
+
+    def detect_patterns(self, df: pd.DataFrame, window: int = 5) -> pd.DataFrame:
+        """Detects Double Top and Double Bottom patterns"""
+        df['Pattern'] = 'None'
+        df['Local_Max'] = df['High'].rolling(window=window*2+1, center=True).max() == df['High']
+        df['Local_Min'] = df['Low'].rolling(window=window*2+1, center=True).min() == df['Low']
+
+        df['Double_Top'] = False
+        df['Double_Bottom'] = False
+
+        tolerance = 0.02
+        last_peak_val = None
+        last_trough_val = None
+
+        for i in range(len(df)):
+            if df['Local_Max'].iloc[i]:
+                current_peak = df['High'].iloc[i]
+                if last_peak_val is not None:
+                    if abs(current_peak - last_peak_val) / last_peak_val < tolerance:
+                        df.loc[df.index[i], 'Double_Top'] = True
+                last_peak_val = current_peak
+
+            if df['Local_Min'].iloc[i]:
+                current_trough = df['Low'].iloc[i]
+                if last_trough_val is not None:
+                    if abs(current_trough - last_trough_val) / last_trough_val < tolerance:
+                        df.loc[df.index[i], 'Double_Bottom'] = True
+                last_trough_val = current_trough
+
+        df.loc[df['Double_Top'], 'Pattern'] = 'Double Top'
+        df.loc[df['Double_Bottom'], 'Pattern'] = 'Double Bottom'
+
+        return df
+
+    def calculate_chandelier_exit(self, df: pd.DataFrame, period: int = 22, multiplier: float = 3.0) -> pd.DataFrame:
+        """Calculates Chandelier Exit (Dynamic Trailing Stop)"""
+        rolling_high = df['High'].rolling(window=period).max()
+        rolling_low = df['Low'].rolling(window=period).min()
+
+        atr = AverageTrueRange(high=df['High'], low=df['Low'], close=df['Close'], window=period)
+        atr_val = atr.average_true_range()
+
+        df['Chandelier_Long'] = rolling_high - (atr_val * multiplier)
+        df['Chandelier_Short'] = rolling_low + (atr_val * multiplier)
 
         return df
 
@@ -114,7 +165,6 @@ class MomentumIndicators:
         atr = AverageTrueRange(high=high, low=low, close=close, window=14)
         df["ATR_14"] = atr.average_true_range()
 
-        # --- NEW WORLD CLASS FEATURE 1: Ichimoku Cloud ---
         try:
             ichimoku = IchimokuIndicator(
                 high=high, low=low, window1=9, window2=26, window3=52
@@ -123,26 +173,36 @@ class MomentumIndicators:
             df["Ichimoku_Base"] = ichimoku.ichimoku_base_line()
             df["Ichimoku_SpanA"] = ichimoku.ichimoku_a()
             df["Ichimoku_SpanB"] = ichimoku.ichimoku_b()
-
-            # Identify cloud trend: Price above cloud = Bullish, below = Bearish
-            # Note: SpanA and SpanB are shifted forward by 26 periods in traditional plotting,
-            # but ta library returns them aligned with the current price for easier boolean comparison against close.
-            df["Ichimoku_Bullish"] = (close > df["Ichimoku_SpanA"]) & (
-                close > df["Ichimoku_SpanB"]
-            )
-            df["Ichimoku_Bearish"] = (close < df["Ichimoku_SpanA"]) & (
-                close < df["Ichimoku_SpanB"]
-            )
+            df["Ichimoku_Bullish"] = (close > df["Ichimoku_SpanA"]) & (close > df["Ichimoku_SpanB"])
+            df["Ichimoku_Bearish"] = (close < df["Ichimoku_SpanA"]) & (close < df["Ichimoku_SpanB"])
         except Exception as e:
             df["Ichimoku_Bullish"] = False
             df["Ichimoku_Bearish"] = False
 
-        # --- NEW WORLD CLASS FEATURE 2: Dynamic Fibonacci Retracements ---
         df = self.calculate_fibonacci_retracements(df, period=100)
 
-        # --- NEW WORLD CLASS FEATURE 3: Volume Profile (VPVR) ---
         vpvr_data = self.calculate_vpvr(df)
         df["VPVR_POC"] = vpvr_data["poc_price"]
+
+        # NEW FEATURES
+        df = self.calculate_obv_divergence(df)
+        df = self.detect_patterns(df)
+        df = self.calculate_chandelier_exit(df)
+
+        adx = ADXIndicator(high=high, low=low, close=close, window=14)
+        df['ADX'] = adx.adx()
+        df['DI_Plus'] = adx.adx_pos()
+        df['DI_Minus'] = adx.adx_neg()
+
+        df['Market_Regime'] = 'Ranging'
+        df.loc[(df['ADX'] > 25) & (df['DI_Plus'] > df['DI_Minus']), 'Market_Regime'] = 'Trending Bullish'
+        df.loc[(df['ADX'] > 25) & (df['DI_Minus'] > df['DI_Plus']), 'Market_Regime'] = 'Trending Bearish'
+
+        stoch_rsi = StochRSIIndicator(close=close, window=14, smooth1=3, smooth2=3)
+        df['Stoch_RSI_K'] = stoch_rsi.stochrsi_k()
+        df['Stoch_RSI_D'] = stoch_rsi.stochrsi_d()
+        df['Stoch_Bullish_Cross'] = (df['Stoch_RSI_K'] > df['Stoch_RSI_D']) & (df['Stoch_RSI_K'].shift(1) <= df['Stoch_RSI_D'].shift(1))
+        df['Stoch_Bearish_Cross'] = (df['Stoch_RSI_K'] < df['Stoch_RSI_D']) & (df['Stoch_RSI_K'].shift(1) >= df['Stoch_RSI_D'].shift(1))
 
         if (
             self.htf_data is not None
@@ -160,9 +220,7 @@ class MomentumIndicators:
 
             if df.index.tz is not None and htf_trend_series.index.tz is not None:
                 if df.index.tz != htf_trend_series.index.tz:
-                    htf_trend_series.index = htf_trend_series.index.tz_convert(
-                        df.index.tz
-                    )
+                    htf_trend_series.index = htf_trend_series.index.tz_convert(df.index.tz)
             elif df.index.tz is not None and htf_trend_series.index.tz is None:
                 htf_trend_series.index = htf_trend_series.index.tz_localize(df.index.tz)
             elif df.index.tz is None and htf_trend_series.index.tz is not None:
