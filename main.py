@@ -16,7 +16,7 @@ from crypto_momentum.signal_generator import SignalGenerator
 from crypto_momentum.backtester import Backtester
 from crypto_momentum.ai_predictor import AIPredictor
 
-console = Console(record=True)
+console = Console(record=True, width=120)
 
 
 def format_color(val, threshold1, threshold2, reverse=False):

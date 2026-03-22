@@ -37,6 +37,15 @@ Whether you're a day trader hunting for quick setups or a quant researching stra
 
 ![Terminal Output](docs/assets/ui_default.svg)
 
+### Backtest Example
+![Backtest Output](docs/assets/ui_backtest.svg)
+
+### MTF Example
+![MTF Output](docs/assets/ui_mtf.svg)
+
+### Multiple Assets Example
+![Multiple Output](docs/assets/ui_multiple.svg)
+
 
 1.  **📊 On-Balance Volume (OBV) Divergence Detection**: Automatically flags critical hidden bullish and bearish divergences between price action and cumulative volume flow.
 2.  **🧠 Advanced Pattern Recognition Engine**: Scans rolling local extremums to instantly identify Double Top and Double Bottom formations with high precision.
