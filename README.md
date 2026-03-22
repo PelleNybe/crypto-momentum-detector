@@ -35,13 +35,14 @@ Whether you're a day trader hunting for quick setups or a quant researching stra
 
 ## 🚀 5 New World-Class Features
 
-1.  **🤖 Predictive AI Engine**: A built-in `RandomForestClassifier` analyzes 14+ technical factors to generate an **AI Confidence Score**, predicting the exact probability of a positive price move in the next period.
-2.  **📊 Volume Profile Visible Range (VPVR)**: Real-time calculation of the Point of Control (POC), highlighting the exact price levels where the most institutional volume was traded.
-3.  **☁️ Ichimoku Cloud Confluence**: Advanced Japanese trend-following logic using full Ichimoku Cloud state (Span A / Span B) as a mandatory confluence filter for signal generation.
-4.  **📐 Dynamic Fibonacci Levels**: Automatically plots real-time 100-period rolling Fibonacci retracement lines on your charts to identify hidden support and resistance.
-5.  **🎲 Monte Carlo Risk Profiling**: Don't just backtest. Our engine runs 1,000 randomized Monte Carlo simulations on your historical trades to calculate the **Risk of Ruin** (probability of a >20% drawdown) and true Median Return.
+1.  **📊 On-Balance Volume (OBV) Divergence Detection**: Automatically flags critical hidden bullish and bearish divergences between price action and cumulative volume flow.
+2.  **🧠 Advanced Pattern Recognition Engine**: Scans rolling local extremums to instantly identify Double Top and Double Bottom formations with high precision.
+3.  **🛡️ Dynamic Trailing Stop Loss (Chandelier Exit)**: Maximizes profit capture by utilizing an ATR-based Chandelier Exit that scales with volatility, replacing static stops.
+4.  **🌐 Market Regime Filter**: Leverages ADX and DI indicators to classify the market state into "Trending Bullish", "Trending Bearish", or "Ranging", allowing for context-aware signals.
+5.  **⚡ Stochastic RSI Confluence**: Pinpoints exact momentum shifts using Stochastic RSI %K and %D crossovers for laser-accurate entry timing.
 
-*Plus all the legacy features like MTF (Multi-Timeframe) support, dynamic risk sizing (ATR SL/TP levels), blazing fast concurrent processing, and PyArrow/Parquet data caching!*
+*Plus all the legacy features like the Predictive AI Engine, Volume Profile (VPVR), Ichimoku Cloud Confluence, Dynamic Fibonacci Levels, Monte Carlo Risk Profiling, MTF (Multi-Timeframe) support, and PyArrow/Parquet data caching!*
+
 
 ---
 

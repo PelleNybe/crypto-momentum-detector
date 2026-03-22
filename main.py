@@ -99,7 +99,8 @@ def main():
     console.print(
         Panel.fit(
             "[bold cyan]⚡ NeonPulse AI Crypto Terminal ⚡[/bold cyan]\n"
-            "[dim]Neural Network + Momentum Scanning + Risk Profiling[/dim]",
+            "[dim]Neural Network + Momentum Scanning + Risk Profiling[/dim]\n"
+            "[italic]Developed by Pelle Nyberg (Corax CoLAB)[/italic]",
             border_style="cyan",
         )
     )
@@ -135,7 +136,9 @@ def main():
     table.add_column("Price", justify="right")
     table.add_column("AI Conf", justify="right")
     table.add_column("RSI", justify="right")
-    table.add_column("VPVR POC", justify="right")
+    table.add_column("Regime", justify="center")
+    table.add_column("Pattern", justify="center")
+    table.add_column("StochRSI", justify="center")
     table.add_column("Cloud", justify="center")
     table.add_column("HTF Trend", justify="center")
     table.add_column("Action", justify="center", style="bold")
@@ -179,6 +182,17 @@ def main():
             format_ai_confidence(res.get("AI_Confidence", 50)),
             format_color(res["RSI"], 30, 70),
             f"${res.get('VPVR_POC', 0):.2f}",
+            res.get("Market_Regime", "N/A"),
+            res.get("Pattern", "None"),
+            (
+                "[green]Bullish[/green]"
+                if res.get("Stoch_Bullish_Cross")
+                else (
+                    "[red]Bearish[/red]"
+                    if res.get("Stoch_Bearish_Cross")
+                    else "Neutral"
+                )
+            ),
             cloud,
             htf_fmt,
             action_fmt,
