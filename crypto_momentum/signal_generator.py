@@ -190,6 +190,7 @@ class SignalGenerator:
             "Fib_1": latest.get("Fib_1", 0),
             "OBV_Bullish_Div": latest.get("OBV_Bullish_Div", False),
             "OBV_Bearish_Div": latest.get("OBV_Bearish_Div", False),
+            "VWAP": latest.get("VWAP", 0),
             "Pattern": latest.get("Pattern", "None"),
             "Chandelier_Long": latest.get("Chandelier_Long", float("nan")),
             "Chandelier_Short": latest.get("Chandelier_Short", float("nan")),
