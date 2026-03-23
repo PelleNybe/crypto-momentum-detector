@@ -49,7 +49,7 @@ class AIPredictor:
         df_ml = self.df.copy()
 
         # Calculate derived features
-        df_ml["Price_Change"] = df_ml["Close"].pct_change()
+        df_ml["Price_Change"] = df_ml["Close"].pct_change(fill_method=None)
         df_ml["SMA_Diff"] = (df_ml["SMA_20"] - df_ml["SMA_50"]) / df_ml["SMA_50"]
 
         # Target: 1 if next period's return is positive, 0 otherwise
