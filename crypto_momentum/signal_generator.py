@@ -152,7 +152,10 @@ class SignalGenerator:
         predictor = AIPredictor(df_with_signals)
         ai_confidence = predictor.train_and_predict()
 
-        latest = df_with_signals.iloc[-1]
+        df_valid = df_with_signals.dropna(subset=["Close"])
+        if df_valid.empty:
+            return None
+        latest = df_valid.iloc[-1]
 
         date_str = (
             str(df_with_signals.index[-1].date())

@@ -81,8 +81,8 @@ class MomentumIndicators:
         obv = OnBalanceVolumeIndicator(close=df["Close"], volume=df["Volume"])
         df["OBV"] = obv.on_balance_volume()
 
-        price_roc = df["Close"].pct_change(window)
-        obv_roc = df["OBV"].pct_change(window)
+        price_roc = df["Close"].pct_change(periods=window, fill_method=None)
+        obv_roc = df["OBV"].pct_change(periods=window, fill_method=None)
 
         df["OBV_Bullish_Div"] = (price_roc < 0) & (obv_roc > 0)
         df["OBV_Bearish_Div"] = (price_roc > 0) & (obv_roc < 0)

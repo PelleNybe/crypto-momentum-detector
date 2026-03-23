@@ -145,6 +145,7 @@ def main():
     table.add_column("Price", justify="right")
     table.add_column("AI Conf", justify="right")
     table.add_column("RSI", justify="right")
+    table.add_column("VPVR POC", justify="right")
     table.add_column("Regime", justify="center")
     table.add_column("Pattern", justify="center")
     table.add_column("StochRSI", justify="center")
