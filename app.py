@@ -1,3 +1,7 @@
+import yfinance as yf
+
+yf.set_tz_cache_location(".yfinance_tz_cache")
+
 import streamlit as st
 import pandas as pd
 import yfinance as yf

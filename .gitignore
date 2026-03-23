@@ -12,3 +12,4 @@ htmlcov/
 .test_cache/
 .test_cache2/
 *.parquet
+.yfinance_tz_cache/

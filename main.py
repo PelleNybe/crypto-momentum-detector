@@ -1,3 +1,7 @@
+import yfinance as yf
+
+yf.set_tz_cache_location(".yfinance_tz_cache")
+
 import argparse
 import sys
 import math
