@@ -345,6 +345,19 @@ if analyze_button:
                 col=1,
             )
 
+            # --- VWAP ---
+            if "VWAP" in df.columns:
+                fig.add_trace(
+                    go.Scatter(
+                        x=df.index,
+                        y=df["VWAP"],
+                        line=dict(color="#f9ca24", width=1.5, dash="dot"),
+                        name="VWAP",
+                    ),
+                    row=1,
+                    col=1,
+                )
+
             # --- WORLD CLASS FEATURE: Ichimoku Cloud Plotting ---
             if "Ichimoku_SpanA" in df.columns and "Ichimoku_SpanB" in df.columns:
                 # Standard Ichimoku plots are shifted 26 periods forward, but we align them with price here for display.
@@ -549,6 +562,7 @@ if analyze_button:
                 st.write(f"**Volume POC:** ${r.get('VPVR_POC', 0):.2f}")
                 st.write(f"**Fib High (0):** ${r.get('Fib_0', 0):.2f}")
                 st.write(f"**Fib Mid (0.5):** ${r.get('Fib_0.5', 0):.2f}")
+                st.write(f"**VWAP:** ${r.get('VWAP', 0):.2f}")
                 st.write(f"**Fib Low (1):** ${r.get('Fib_1', 0):.2f}")
 
             if run_backtest and "backtest" in r:
@@ -570,3 +584,6 @@ if analyze_button:
                         f"**Risk of Ruin (>20% DD):** <span style='color:{risk_color}'>{bt.get('Risk of Ruin %', 0):.2f}%</span>",
                         unsafe_allow_html=True,
                     )
+                    st.write(f"**Sharpe Ratio:** {bt.get('Sharpe Ratio', 0):.2f}")
+                    st.write(f"**Sortino Ratio:** {bt.get('Sortino Ratio', 0):.2f}")
+                    st.write(f"**Profit Factor:** {bt.get('Profit Factor', 0):.2f}")

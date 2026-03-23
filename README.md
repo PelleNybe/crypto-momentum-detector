@@ -52,6 +52,9 @@ Whether you're a day trader hunting for quick setups or a quant researching stra
 3.  **🛡️ Dynamic Trailing Stop Loss (Chandelier Exit)**: Maximizes profit capture by utilizing an ATR-based Chandelier Exit that scales with volatility, replacing static stops.
 4.  **🌐 Market Regime Filter**: Leverages ADX and DI indicators to classify the market state into "Trending Bullish", "Trending Bearish", or "Ranging", allowing for context-aware signals.
 5.  **⚡ Stochastic RSI Confluence**: Pinpoints exact momentum shifts using Stochastic RSI %K and %D crossovers for laser-accurate entry timing.
+6.  **📈 Volume Weighted Average Price (VWAP)**: A fundamental indicator used by institutional traders, displayed on the interactive candlestick chart to gauge average price matched with volume.
+7.  **🏆 Advanced Backtesting Metrics**: Now includes **Sharpe Ratio**, **Sortino Ratio**, and **Profit Factor**, giving you institutional-grade insights into strategy performance alongside Monte Carlo risk of ruin.
+8.  **🤖 Gradient Boosting Machine Learning**: The AI Predictive engine has been upgraded to a powerful Gradient Boosting Classifier, adding ADX, StochRSI, and VWAP features for an unparalleled edge.
 
 *Plus all the legacy features like the Predictive AI Engine, Volume Profile (VPVR), Ichimoku Cloud Confluence, Dynamic Fibonacci Levels, Monte Carlo Risk Profiling, MTF (Multi-Timeframe) support, and PyArrow/Parquet data caching!*
 

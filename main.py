@@ -151,6 +151,8 @@ def main():
     if args.backtest:
         table.add_column("MC Return", justify="right")
         table.add_column("Risk Ruin", justify="right")
+        table.add_column("Sharpe", justify="right")
+        table.add_column("Profit F.", justify="right")
 
     for res in results:
         if "error" in res:
@@ -204,8 +206,12 @@ def main():
         ]
 
         if args.backtest and "backtest" in res:
-            mc_ret = res["backtest"].get("MC Median Return %", 0)
-            ruin = res["backtest"].get("Risk of Ruin %", 0)
+            bt = res["backtest"]
+            mc_ret = bt.get("MC Median Return %", 0)
+            ruin = bt.get("Risk of Ruin %", 0)
+            sharpe = bt.get("Sharpe Ratio", 0)
+            profit_f = bt.get("Profit Factor", 0)
+
             mc_fmt = (
                 f"[green]{mc_ret:.1f}%[/green]"
                 if mc_ret > 0
@@ -220,7 +226,22 @@ def main():
                     else f"[green]{ruin:.1f}%[/green]"
                 )
             )
-            row.extend([mc_fmt, ruin_fmt])
+            sharpe_fmt = (
+                f"[green]{sharpe:.2f}[/green]"
+                if sharpe > 1
+                else (
+                    f"[yellow]{sharpe:.2f}[/yellow]"
+                    if sharpe > 0
+                    else f"[red]{sharpe:.2f}[/red]"
+                )
+            )
+            profit_fmt = (
+                f"[green]{profit_f:.2f}[/green]"
+                if profit_f > 1
+                else f"[red]{profit_f:.2f}[/red]"
+            )
+
+            row.extend([mc_fmt, ruin_fmt, sharpe_fmt, profit_fmt])
 
         table.add_row(*row)
 

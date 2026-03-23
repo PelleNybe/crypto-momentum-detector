@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.preprocessing import StandardScaler
 import logging
 
@@ -9,14 +9,14 @@ logger = logging.getLogger(__name__)
 
 class AIPredictor:
     """
-    An AI module that uses a Random Forest Classifier to predict the probability
+    An AI module that uses a Gradient Boosting Classifier to predict the probability
     of a positive price movement in the next period.
     """
 
     def __init__(self, df: pd.DataFrame):
         self.df = df.copy()
-        self.model = RandomForestClassifier(
-            n_estimators=100, max_depth=5, random_state=42
+        self.model = GradientBoostingClassifier(
+            n_estimators=100, learning_rate=0.1, max_depth=5, random_state=42
         )
         self.scaler = StandardScaler()
         self.is_trained = False
@@ -34,6 +34,11 @@ class AIPredictor:
             "Close",
             "SMA_20",
             "SMA_50",
+            "ADX",
+            "Stoch_RSI_K",
+            "Stoch_RSI_D",
+            "VWAP",
+            "Volume",
         ]
 
         # Check if features exist

@@ -2,7 +2,7 @@ import pandas as pd
 from ta.momentum import RSIIndicator, StochRSIIndicator
 from ta.trend import MACD, SMAIndicator, EMAIndicator, IchimokuIndicator, ADXIndicator
 from ta.volatility import BollingerBands, AverageTrueRange
-from ta.volume import OnBalanceVolumeIndicator
+from ta.volume import OnBalanceVolumeIndicator, VolumeWeightedAveragePrice
 import numpy as np
 
 
@@ -207,6 +207,15 @@ class MomentumIndicators:
         df["VPVR_POC"] = vpvr_data["poc_price"]
 
         # NEW FEATURES
+        # VWAP
+        if "Volume" in df.columns:
+            vwap = VolumeWeightedAveragePrice(
+                high=high, low=low, close=close, volume=df["Volume"], window=14
+            )
+            df["VWAP"] = vwap.volume_weighted_average_price()
+        else:
+            df["VWAP"] = close
+
         df = self.calculate_obv_divergence(df)
         df = self.detect_patterns(df)
         df = self.calculate_chandelier_exit(df)

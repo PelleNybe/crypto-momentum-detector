@@ -143,11 +143,43 @@ class Backtester:
             peak = equity_series.cummax()
             drawdown = (equity_series - peak) / peak
             max_drawdown = drawdown.min() * 100
+
+            # Daily returns from equity curve
+            daily_returns = equity_series.pct_change().dropna()
+
+            # Sharpe Ratio (annualized, assuming daily data)
+            if daily_returns.std() != 0:
+                sharpe_ratio = (daily_returns.mean() / daily_returns.std()) * np.sqrt(
+                    365
+                )
+            else:
+                sharpe_ratio = 0.0
+
+            # Sortino Ratio
+            downside_returns = daily_returns[daily_returns < 0]
+            if not downside_returns.empty and downside_returns.std() != 0:
+                sortino_ratio = (
+                    daily_returns.mean() / downside_returns.std()
+                ) * np.sqrt(365)
+            else:
+                sortino_ratio = 0.0
         else:
             max_drawdown = 0.0
+            sharpe_ratio = 0.0
+            sortino_ratio = 0.0
 
         winning_trades = [t for t in trades if t > 0]
+        losing_trades = [t for t in trades if t < 0]
         win_rate = (len(winning_trades) / len(trades) * 100) if trades else 0.0
+
+        # Profit Factor
+        gross_profit = sum(winning_trades) if winning_trades else 0.0
+        gross_loss = abs(sum(losing_trades)) if losing_trades else 0.0
+        profit_factor = (
+            (gross_profit / gross_loss)
+            if gross_loss > 0
+            else (float("inf") if gross_profit > 0 else 0.0)
+        )
 
         # --- NEW WORLD CLASS FEATURE 4: Monte Carlo Analysis ---
         mc_results = self._run_monte_carlo(trades)
@@ -157,6 +189,9 @@ class Backtester:
             "Final Balance": final_balance,
             "Return %": return_pct,
             "Max Drawdown %": max_drawdown,
+            "Sharpe Ratio": sharpe_ratio,
+            "Sortino Ratio": sortino_ratio,
+            "Profit Factor": profit_factor,
             "Win Rate %": win_rate,
             "Total Trades": len(trades),
             "MC Median Return %": mc_results["MC Median Return %"],
