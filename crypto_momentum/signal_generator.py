@@ -184,7 +184,9 @@ class SignalGenerator:
             "Take_Profit": latest.get("Take_Profit", float("nan")),
             "Sparkline_Data": sparkline_data,
             # NEW FEATURES
-            "AI_Confidence": ai_confidence,
+            "AI_Confidence": ai_confidence.get("confidence", 50.0),
+            "AI_CV_Accuracy": ai_confidence.get("cv_accuracy", 0.0),
+            "AI_Feature_Importances": ai_confidence.get("feature_importances", {}),
             "VPVR_POC": latest.get("VPVR_POC", 0),
             "Ichimoku_Bullish": latest.get("Ichimoku_Bullish", False),
             "Ichimoku_Bearish": latest.get("Ichimoku_Bearish", False),

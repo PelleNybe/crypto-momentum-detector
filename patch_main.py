@@ -1,5 +1,10 @@
-import yfinance as yf
+import re
 
+with open("main.py", "r") as f:
+    content = f.read()
+
+imports = """
+import yfinance as yf
 yf.set_tz_cache_location(".yfinance_tz_cache")
 
 import argparse
@@ -16,111 +21,13 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.live import Live
 from rich.layout import Layout
 import pandas as pd
+"""
+content = re.sub(
+    r"import yfinance as yf.*?import pandas as pd", imports, content, flags=re.DOTALL
+)
 
 
-from crypto_momentum.data_fetcher import DataFetcher
-from crypto_momentum.indicators import MomentumIndicators
-from crypto_momentum.signal_generator import SignalGenerator
-from crypto_momentum.backtester import Backtester
-from crypto_momentum.ai_predictor import AIPredictor
-
-console = Console(record=True, width=120)
-
-
-def format_color(val, threshold1, threshold2, reverse=False):
-    if reverse:
-        if val <= threshold1:
-            return f"[green]{val:.2f}[/green]"
-        if val >= threshold2:
-            return f"[red]{val:.2f}[/red]"
-    else:
-        if val >= threshold2:
-            return f"[green]{val:.2f}[/green]"
-        if val <= threshold1:
-            return f"[red]{val:.2f}[/red]"
-    return f"[yellow]{val:.2f}[/yellow]"
-
-
-def format_ai_confidence(val):
-    if isinstance(val, dict):
-        val = val.get("confidence", 50.0)
-    if val >= 60:
-        return f"[bold cyan]{val:.1f}%[/bold cyan]"
-    if val <= 40:
-        return f"[bold red]{val:.1f}%[/bold red]"
-    return f"[bold yellow]{val:.1f}%[/bold yellow]"
-
-
-def process_ticker(ticker, period, interval, use_mtf, run_backtest):
-    fetcher = DataFetcher(ticker_symbol=ticker)
-    df = fetcher.fetch_historical_data(period=period, interval=interval)
-
-    htf_df = None
-    if use_mtf:
-        htf_df = fetcher.fetch_htf_data(period=period, interval=interval)
-
-    if df.empty:
-        return {"ticker": ticker, "error": "No data available."}
-
-    indicators = MomentumIndicators(data=df, htf_data=htf_df)
-    df_with_indicators = indicators.calculate_all()
-
-    generator = SignalGenerator(data=df_with_indicators, use_mtf=use_mtf)
-    latest_signal = generator.get_latest_signal()
-
-    if not latest_signal:
-        return {"ticker": ticker, "error": "Failed to generate signals."}
-
-    # Get AI Confidence
-    predictor = AIPredictor(df_with_indicators)
-    ai_confidence = predictor.train_and_predict()
-    latest_signal["AI_Confidence"] = ai_confidence
-
-    result = {"ticker": ticker, **latest_signal}
-
-    if run_backtest:
-        df_signals = generator.generate_signals()
-        backtester = Backtester(data=df_signals)
-        result["backtest"] = backtester.run()
-
-    return result
-
-
-def main():
-    parser = argparse.ArgumentParser(description="⚡ NeonPulse CLI: AI Crypto Momentum")
-    parser.add_argument(
-        "--tickers",
-        nargs="+",
-        default=["BTC-USD", "ETH-USD"],
-        help="List of tickers (e.g., BTC-USD ETH-USD)",
-    )
-    parser.add_argument("--period", default="6mo", help="Data period (e.g., 6mo, 1y)")
-    parser.add_argument("--interval", default="1d", help="Data interval (e.g., 1h, 1d)")
-    parser.add_argument(
-        "--use-mtf", action="store_true", help="Enable Multi-Timeframe Analysis"
-    )
-    parser.add_argument(
-        "--backtest", action="store_true", help="Run historical Monte Carlo backtest"
-    )
-    parser.add_argument("--export", type=str, help="Export results to CSV (file path)")
-    parser.add_argument(
-        "--save-svg",
-        action="store_true",
-        help="Save the terminal output as an SVG file",
-    )
-
-    args = parser.parse_args()
-
-    console.print(
-        Panel.fit(
-            "[bold cyan]⚡ NeonPulse AI Crypto Terminal ⚡[/bold cyan]\n"
-            "[dim]Neural Network + Momentum Scanning + Risk Profiling[/dim]\n"
-            "[italic]Developed by Pelle Nyberg (Corax CoLAB)[/italic]",
-            border_style="cyan",
-        )
-    )
-
-
+generate_table_func = """
 def generate_table(results, args):
     table = Table(box=box.MINIMAL_DOUBLE_HEAD, header_style="bold cyan")
     table.add_column("Asset", justify="left", style="bold white")
@@ -144,18 +51,7 @@ def generate_table(results, args):
     for res in results:
         if "error" in res:
             table.add_row(
-                res["ticker"],
-                f"[red]{res['error']}[/red]",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
+                res["ticker"], f"[red]{res['error']}[/red]", "", "", "", "", "", "", "", "", "", ""
             )
             continue
 
@@ -238,9 +134,14 @@ def generate_table(results, args):
 
         table.add_row(*row)
     return table
+"""
 
+main_loop = """
     layout = Layout()
-    layout.split(Layout(name="header", size=5), Layout(name="body"))
+    layout.split(
+        Layout(name="header", size=5),
+        Layout(name="body")
+    )
     layout["header"].update(
         Panel.fit(
             "[bold cyan]⚡ NeonPulse AI Crypto Terminal ⚡[/bold cyan]\n"
@@ -279,37 +180,14 @@ def generate_table(results, args):
         console.print(
             f"[bold green]✓[/bold green] Saved terminal output to docs/assets/ui_default.svg"
         )
+"""
 
-    if args.save_svg:
-        console.save_svg("docs/assets/ui_default.svg", title="NeonPulse UI")
-        console.print(
-            f"[bold green]✓[/bold green] Saved terminal output to docs/assets/ui_default.svg"
-        )
+content = re.sub(
+    r"    results = \[\]\n.*?console\.print\(table\)",
+    generate_table_func + "\n" + main_loop,
+    content,
+    flags=re.DOTALL,
+)
 
-    # Export logic
-    if args.export:
-        export_data = []
-        for r in results:
-            if "error" in r:
-                continue
-            row = {
-                "Ticker": r["ticker"],
-                "Price": r["Price"],
-                "Action": r["Action"],
-                "AI_Confidence": r.get("AI_Confidence", 50),
-                "RSI": r["RSI"],
-                "MACD": r["MACD"],
-                "VPVR_POC": r.get("VPVR_POC", 0),
-                "Ichimoku_Bullish": r.get("Ichimoku_Bullish", False),
-            }
-            if args.backtest and "backtest" in r:
-                row["MC_Return_Pct"] = r["backtest"].get("MC Median Return %", 0)
-                row["Risk_of_Ruin_Pct"] = r["backtest"].get("Risk of Ruin %", 0)
-            export_data.append(row)
-
-        pd.DataFrame(export_data).to_csv(args.export, index=False)
-        console.print(f"[bold green]✓[/bold green] Results exported to {args.export}")
-
-
-if __name__ == "__main__":
-    main()
+with open("main.py", "w") as f:
+    f.write(content)

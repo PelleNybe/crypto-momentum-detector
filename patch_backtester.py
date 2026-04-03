@@ -1,77 +1,13 @@
-import pandas as pd
-import logging
-import numpy as np
+import re
 
-logger = logging.getLogger(__name__)
+with open("crypto_momentum/backtester.py", "r") as f:
+    content = f.read()
 
-
-class Backtester:
-    def __init__(
-        self,
-        data: pd.DataFrame,
-        initial_balance: float = 10000.0,
-        fee_rate: float = 0.001,
-        slippage: float = 0.0005,
-        position_size: float = 1.0,
-        mc_simulations: int = 1000,
-    ):
-        """
-        Initializes the Backtester with Monte Carlo capabilities.
-        """
-        self.data = data
-        self.initial_balance = initial_balance
-        self.fee_rate = fee_rate
-        self.slippage = slippage
-        self.position_size = position_size
-        self.mc_simulations = mc_simulations
-
-    def _run_monte_carlo(self, trades: list) -> dict:
-        """
-        Runs Monte Carlo simulations by resampling the historical trades.
-        """
-        if not trades or len(trades) < 5:
-            return {"MC Median Return %": 0.0, "Risk of Ruin %": 0.0}
-
-        sim_returns = []
-        ruin_count = 0
-        ruin_threshold = 0.8  # 20% drawdown limit
-
-        for _ in range(self.mc_simulations):
-            # Resample with replacement
-            sim_trades = np.random.choice(trades, size=len(trades), replace=True)
-
-            sim_balance = self.initial_balance
-            max_balance = sim_balance
-            ruin = False
-
-            for t_return in sim_trades:
-                trade_amount = sim_balance * self.position_size
-                net_profit = trade_amount * t_return
-                sim_balance += net_profit
-
-                if sim_balance > max_balance:
-                    max_balance = sim_balance
-                elif sim_balance < max_balance * ruin_threshold:
-                    ruin = True
-                    break  # hit max drawdown limit
-
-            if ruin:
-                ruin_count += 1
-
-            sim_return_pct = (
-                (sim_balance - self.initial_balance) / self.initial_balance
-            ) * 100
-            sim_returns.append(sim_return_pct)
-
-        median_return = np.median(sim_returns)
-        risk_of_ruin = (ruin_count / self.mc_simulations) * 100
-
-        return {"MC Median Return %": median_return, "Risk of Ruin %": risk_of_ruin}
-
+run_func = """
     def run(self) -> dict:
-        """
+        \"\"\"
         Simulates trading based on the 'Signal' column.
-        """
+        \"\"\"
         if (
             self.data is None
             or self.data.empty
@@ -101,11 +37,7 @@ class Backtester:
             low = row.get("Low", price)
 
             if pd.isna(price):
-                current_value = (
-                    balance + (crypto_holdings * price)
-                    if not pd.isna(price)
-                    else balance
-                )
+                current_value = balance + (crypto_holdings * price) if not pd.isna(price) else balance
                 equity_curve.append({"Date": index, "Equity": current_value})
                 continue
 
@@ -126,15 +58,13 @@ class Backtester:
                     trade_return = (execution_price - entry_price) / entry_price
                     trades.append(trade_return)
 
-                    trade_log.append(
-                        {
-                            "Exit Date": index,
-                            "Type": "SL Hit" if hit_sl else "TP Hit",
-                            "Entry Price": entry_price,
-                            "Exit Price": execution_price,
-                            "Return %": trade_return * 100,
-                        }
-                    )
+                    trade_log.append({
+                        "Exit Date": index,
+                        "Type": "SL Hit" if hit_sl else "TP Hit",
+                        "Entry Price": entry_price,
+                        "Exit Price": execution_price,
+                        "Return %": trade_return * 100
+                    })
 
                     balance += net_revenue
                     crypto_holdings = 0.0
@@ -163,7 +93,7 @@ class Backtester:
                 if price_risk > 0:
                     position_size_usd = min(balance, risk_amount / (price_risk / price))
                 else:
-                    position_size_usd = balance * self.position_size  # Fallback
+                    position_size_usd = balance * self.position_size # Fallback
 
                 if position_size_usd > 0:
                     execution_price = price * (1 + self.slippage)
@@ -187,15 +117,13 @@ class Backtester:
                     trade_return = (execution_price - entry_price) / entry_price
                     trades.append(trade_return)
 
-                    trade_log.append(
-                        {
-                            "Exit Date": index,
-                            "Type": "Signal Exit",
-                            "Entry Price": entry_price,
-                            "Exit Price": execution_price,
-                            "Return %": trade_return * 100,
-                        }
-                    )
+                    trade_log.append({
+                        "Exit Date": index,
+                        "Type": "Signal Exit",
+                        "Entry Price": entry_price,
+                        "Exit Price": execution_price,
+                        "Return %": trade_return * 100
+                    })
 
                 balance += net_revenue
                 crypto_holdings = 0.0
@@ -273,5 +201,11 @@ class Backtester:
             "MC Median Return %": mc_results["MC Median Return %"],
             "Risk of Ruin %": mc_results["Risk of Ruin %"],
             "Equity Curve": equity_curve,
-            "Trade Log": trade_log,
+            "Trade Log": trade_log
         }
+"""
+
+content = re.sub(r"    def run\(self\) -> dict:.*", run_func, content, flags=re.DOTALL)
+
+with open("crypto_momentum/backtester.py", "w") as f:
+    f.write(content)
