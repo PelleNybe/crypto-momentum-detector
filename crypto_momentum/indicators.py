@@ -99,30 +99,21 @@ class MomentumIndicators:
             df["Low"].rolling(window=window * 2 + 1, center=True).min() == df["Low"]
         )
 
-        df["Double_Top"] = False
-        df["Double_Bottom"] = False
-
         tolerance = 0.02
-        last_peak_val = None
-        last_trough_val = None
 
-        for i in range(len(df)):
-            if df["Local_Max"].iloc[i]:
-                current_peak = df["High"].iloc[i]
-                if last_peak_val is not None:
-                    if abs(current_peak - last_peak_val) / last_peak_val < tolerance:
-                        df.loc[df.index[i], "Double_Top"] = True
-                last_peak_val = current_peak
+        # Vectorized Double Top detection
+        peaks = df["High"].where(df["Local_Max"])
+        last_peaks = peaks.shift(1).ffill()
+        df["Double_Top"] = df["Local_Max"] & (
+            np.abs(df["High"] - last_peaks) / last_peaks < tolerance
+        )
 
-            if df["Local_Min"].iloc[i]:
-                current_trough = df["Low"].iloc[i]
-                if last_trough_val is not None:
-                    if (
-                        abs(current_trough - last_trough_val) / last_trough_val
-                        < tolerance
-                    ):
-                        df.loc[df.index[i], "Double_Bottom"] = True
-                last_trough_val = current_trough
+        # Vectorized Double Bottom detection
+        troughs = df["Low"].where(df["Local_Min"])
+        last_troughs = troughs.shift(1).ffill()
+        df["Double_Bottom"] = df["Local_Min"] & (
+            np.abs(df["Low"] - last_troughs) / last_troughs < tolerance
+        )
 
         df.loc[df["Double_Top"], "Pattern"] = "Double Top"
         df.loc[df["Double_Bottom"], "Pattern"] = "Double Bottom"
