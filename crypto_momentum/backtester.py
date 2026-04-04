@@ -85,34 +85,97 @@ class Backtester:
         crypto_holdings = 0.0
 
         trades = []
+        trade_log = []
         entry_price = 0.0
+        stop_loss = 0.0
+        take_profit = 0.0
         equity_curve = []
+
+        # Risk management: Risk 2% of capital per trade
+        risk_per_trade = 0.02
 
         for index, row in self.data.iterrows():
             signal = row["Signal"]
             price = row["Close"]
+            high = row.get("High", price)
+            low = row.get("Low", price)
 
-            if pd.isna(price) or pd.isna(signal):
+            if pd.isna(price):
                 current_value = (
                     balance + (crypto_holdings * price)
                     if not pd.isna(price)
                     else balance
                 )
-                equity_curve.append(current_value)
+                equity_curve.append({"Date": index, "Equity": current_value})
                 continue
 
-            if signal in ["BUY", "STRONG BUY"] and balance > 0:
-                trade_amount = balance * self.position_size
-                if trade_amount > 0:
+            # Check if SL or TP is hit before evaluating new signals
+            if crypto_holdings > 0 and entry_price > 0:
+                hit_sl = low <= stop_loss
+                hit_tp = high >= take_profit
+
+                if hit_sl or hit_tp:
+                    exit_price = stop_loss if hit_sl else take_profit
+                    # If market gapped below SL, exit at Open/Low (simplification: use SL price)
+
+                    execution_price = exit_price * (1 - self.slippage)
+                    revenue = crypto_holdings * execution_price
+                    fee = revenue * self.fee_rate
+                    net_revenue = revenue - fee
+
+                    trade_return = (execution_price - entry_price) / entry_price
+                    trades.append(trade_return)
+
+                    trade_log.append(
+                        {
+                            "Exit Date": index,
+                            "Type": "SL Hit" if hit_sl else "TP Hit",
+                            "Entry Price": entry_price,
+                            "Exit Price": execution_price,
+                            "Return %": trade_return * 100,
+                        }
+                    )
+
+                    balance += net_revenue
+                    crypto_holdings = 0.0
+                    entry_price = 0.0
+                    stop_loss = 0.0
+                    take_profit = 0.0
+
+                    current_value = balance
+                    equity_curve.append({"Date": index, "Equity": current_value})
+                    continue
+
+            # Process new signals
+            if signal in ["BUY", "STRONG BUY"] and balance > 0 and crypto_holdings == 0:
+                # Volatility-based sizing (Risk / (Entry - SL))
+                sl_price = row.get("Stop_Loss", price * 0.95)
+                tp_price = row.get("Take_Profit", price * 1.10)
+
+                if pd.isna(sl_price) or sl_price >= price:
+                    sl_price = price * 0.95
+                if pd.isna(tp_price) or tp_price <= price:
+                    tp_price = price * 1.10
+
+                risk_amount = balance * risk_per_trade
+                price_risk = price - sl_price
+
+                if price_risk > 0:
+                    position_size_usd = min(balance, risk_amount / (price_risk / price))
+                else:
+                    position_size_usd = balance * self.position_size  # Fallback
+
+                if position_size_usd > 0:
                     execution_price = price * (1 + self.slippage)
-                    crypto_bought = trade_amount / execution_price
+                    crypto_bought = position_size_usd / execution_price
                     fee = crypto_bought * execution_price * self.fee_rate
 
                     crypto_holdings += crypto_bought - (fee / execution_price)
-                    balance -= trade_amount
+                    balance -= position_size_usd
 
-                    if entry_price == 0.0:
-                        entry_price = execution_price
+                    entry_price = execution_price
+                    stop_loss = sl_price
+                    take_profit = tp_price
 
             elif signal in ["SELL", "STRONG SELL"] and crypto_holdings > 0:
                 execution_price = price * (1 - self.slippage)
@@ -124,12 +187,24 @@ class Backtester:
                     trade_return = (execution_price - entry_price) / entry_price
                     trades.append(trade_return)
 
+                    trade_log.append(
+                        {
+                            "Exit Date": index,
+                            "Type": "Signal Exit",
+                            "Entry Price": entry_price,
+                            "Exit Price": execution_price,
+                            "Return %": trade_return * 100,
+                        }
+                    )
+
                 balance += net_revenue
                 crypto_holdings = 0.0
                 entry_price = 0.0
+                stop_loss = 0.0
+                take_profit = 0.0
 
             current_value = balance + (crypto_holdings * price)
-            equity_curve.append(current_value)
+            equity_curve.append({"Date": index, "Equity": current_value})
 
         final_price = self.data["Close"].iloc[-1]
         final_balance = balance + (crypto_holdings * final_price)
@@ -139,7 +214,8 @@ class Backtester:
         ) * 100
 
         if equity_curve:
-            equity_series = pd.Series(equity_curve)
+            equity_df = pd.DataFrame(equity_curve).set_index("Date")
+            equity_series = equity_df["Equity"]
             peak = equity_series.cummax()
             drawdown = (equity_series - peak) / peak
             max_drawdown = drawdown.min() * 100
@@ -196,4 +272,6 @@ class Backtester:
             "Total Trades": len(trades),
             "MC Median Return %": mc_results["MC Median Return %"],
             "Risk of Ruin %": mc_results["Risk of Ruin %"],
+            "Equity Curve": equity_curve,
+            "Trade Log": trade_log,
         }

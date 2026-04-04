@@ -5,6 +5,7 @@ yf.set_tz_cache_location(".yfinance_tz_cache")
 import argparse
 import sys
 import math
+import time
 from concurrent.futures import ThreadPoolExecutor
 from rich.console import Console
 from rich.table import Table
@@ -12,7 +13,10 @@ from rich.panel import Panel
 from rich.text import Text
 from rich import box
 from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.live import Live
+from rich.layout import Layout
 import pandas as pd
+
 
 from crypto_momentum.data_fetcher import DataFetcher
 from crypto_momentum.indicators import MomentumIndicators
@@ -38,6 +42,8 @@ def format_color(val, threshold1, threshold2, reverse=False):
 
 
 def format_ai_confidence(val):
+    if isinstance(val, dict):
+        val = val.get("confidence", 50.0)
     if val >= 60:
         return f"[bold cyan]{val:.1f}%[/bold cyan]"
     if val <= 40:
@@ -114,36 +120,13 @@ def main():
         )
     )
 
-    results = []
 
-    with Progress(
-        SpinnerColumn(spinner_name="dots", style="cyan"),
-        TextColumn("[progress.description]{task.description}"),
-        console=console,
-    ) as progress:
-        task = progress.add_task("[cyan]Scanning markets...", total=len(args.tickers))
-
-        with ThreadPoolExecutor(max_workers=min(10, len(args.tickers))) as executor:
-            futures = {
-                executor.submit(
-                    process_ticker,
-                    t,
-                    args.period,
-                    args.interval,
-                    args.use_mtf,
-                    args.backtest,
-                ): t
-                for t in args.tickers
-            }
-            for future in futures:
-                res = future.result()
-                results.append(res)
-                progress.advance(task)
-
+def generate_table(results, args):
     table = Table(box=box.MINIMAL_DOUBLE_HEAD, header_style="bold cyan")
     table.add_column("Asset", justify="left", style="bold white")
     table.add_column("Price", justify="right")
     table.add_column("AI Conf", justify="right")
+    table.add_column("AI CV Acc", justify="right")
     table.add_column("RSI", justify="right")
     table.add_column("VPVR POC", justify="right")
     table.add_column("Regime", justify="center")
@@ -157,12 +140,22 @@ def main():
         table.add_column("MC Return", justify="right")
         table.add_column("Risk Ruin", justify="right")
         table.add_column("Sharpe", justify="right")
-        table.add_column("Profit F.", justify="right")
 
     for res in results:
         if "error" in res:
             table.add_row(
-                res["ticker"], f"[red]{res['error']}[/red]", "", "", "", "", "", ""
+                res["ticker"],
+                f"[red]{res['error']}[/red]",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
             )
             continue
 
@@ -191,7 +184,8 @@ def main():
         row = [
             res["ticker"],
             f"${res['Price']:.2f}",
-            format_ai_confidence(res.get("AI_Confidence", 50)),
+            format_ai_confidence(res.get("AI_Confidence", 50.0)),
+            f"{res.get('AI_CV_Accuracy', 0.0):.1f}%",
             format_color(res["RSI"], 30, 70),
             f"${res.get('VPVR_POC', 0):.2f}",
             res.get("Market_Regime", "N/A"),
@@ -215,7 +209,6 @@ def main():
             mc_ret = bt.get("MC Median Return %", 0)
             ruin = bt.get("Risk of Ruin %", 0)
             sharpe = bt.get("Sharpe Ratio", 0)
-            profit_f = bt.get("Profit Factor", 0)
 
             mc_fmt = (
                 f"[green]{mc_ret:.1f}%[/green]"
@@ -240,18 +233,53 @@ def main():
                     else f"[red]{sharpe:.2f}[/red]"
                 )
             )
-            profit_fmt = (
-                f"[green]{profit_f:.2f}[/green]"
-                if profit_f > 1
-                else f"[red]{profit_f:.2f}[/red]"
-            )
 
-            row.extend([mc_fmt, ruin_fmt, sharpe_fmt, profit_fmt])
+            row.extend([mc_fmt, ruin_fmt, sharpe_fmt])
 
         table.add_row(*row)
+    return table
 
-    console.print("\n")
-    console.print(table)
+    layout = Layout()
+    layout.split(Layout(name="header", size=5), Layout(name="body"))
+    layout["header"].update(
+        Panel.fit(
+            "[bold cyan]⚡ NeonPulse AI Crypto Terminal ⚡[/bold cyan]\n"
+            "[dim]Neural Network + Momentum Scanning + Risk Profiling[/dim]\n"
+            "[italic]Developed by Pelle Nyberg (Corax CoLAB)[/italic]",
+            border_style="cyan",
+        )
+    )
+
+    results = []
+
+    with Live(layout, refresh_per_second=4, console=console) as live:
+        with ThreadPoolExecutor(max_workers=min(10, len(args.tickers))) as executor:
+            futures = {
+                executor.submit(
+                    process_ticker,
+                    t,
+                    args.period,
+                    args.interval,
+                    args.use_mtf,
+                    args.backtest,
+                ): t
+                for t in args.tickers
+            }
+
+            # Create a progress table while loading
+            for future in futures:
+                res = future.result()
+                results.append(res)
+
+                # Update layout body with current table
+                layout["body"].update(generate_table(results, args))
+
+    if args.save_svg:
+        console.save_svg("docs/assets/ui_default.svg", title="NeonPulse UI")
+        console.print(
+            f"[bold green]✓[/bold green] Saved terminal output to docs/assets/ui_default.svg"
+        )
+
     if args.save_svg:
         console.save_svg("docs/assets/ui_default.svg", title="NeonPulse UI")
         console.print(

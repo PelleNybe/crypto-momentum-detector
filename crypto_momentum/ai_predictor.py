@@ -1,6 +1,12 @@
 import pandas as pd
 import numpy as np
-from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import (
+    GradientBoostingClassifier,
+    RandomForestClassifier,
+    VotingClassifier,
+)
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import TimeSeriesSplit, cross_val_score
 from sklearn.preprocessing import StandardScaler
 import logging
 
@@ -15,8 +21,14 @@ class AIPredictor:
 
     def __init__(self, df: pd.DataFrame):
         self.df = df.copy()
-        self.model = GradientBoostingClassifier(
+        gb = GradientBoostingClassifier(
             n_estimators=100, learning_rate=0.1, max_depth=5, random_state=42
+        )
+        rf = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
+        lr = LogisticRegression(random_state=42, max_iter=1000)
+
+        self.model = VotingClassifier(
+            estimators=[("gb", gb), ("rf", rf), ("lr", lr)], voting="soft"
         )
         self.scaler = StandardScaler()
         self.is_trained = False
@@ -64,7 +76,7 @@ class AIPredictor:
 
         return X, y, ml_features
 
-    def train_and_predict(self) -> float:
+    def train_and_predict(self) -> dict:
         """
         Trains the model on historical data and predicts the probability
         of a positive return for the current (latest) period.
@@ -73,7 +85,7 @@ class AIPredictor:
 
         if X is None or len(X) < 30:
             logger.warning("Not enough data to train AI Predictor.")
-            return 50.0  # Neutral confidence
+            return {"confidence": 50.0, "cv_accuracy": 0.0, "feature_importances": {}}
 
         try:
             # We train on all data except the last row
@@ -87,6 +99,13 @@ class AIPredictor:
             X_train_scaled = self.scaler.fit_transform(X_train)
             X_latest_scaled = self.scaler.transform(X_latest)
 
+            # Cross validation
+            tscv = TimeSeriesSplit(n_splits=5)
+            cv_scores = cross_val_score(
+                self.model, X_train_scaled, y_train, cv=tscv, scoring="accuracy"
+            )
+            cv_accuracy = cv_scores.mean() * 100
+
             # Train model
             self.model.fit(X_train_scaled, y_train)
             self.is_trained = True
@@ -96,8 +115,40 @@ class AIPredictor:
 
             # Convert to percentage
             confidence_score = prob * 100
-            return confidence_score
+
+            # Get feature importances from GB and RF models
+            feature_importances = {}
+            for name, clf in self.model.named_estimators_.items():
+                if hasattr(clf, "feature_importances_"):
+                    for i, col in enumerate(feature_cols):
+                        feature_importances[col] = (
+                            feature_importances.get(col, 0)
+                            + clf.feature_importances_[i]
+                        )
+
+            # Average the importances
+            num_models_with_fi = sum(
+                1
+                for clf in self.model.named_estimators_.values()
+                if hasattr(clf, "feature_importances_")
+            )
+            if num_models_with_fi > 0:
+                for k in feature_importances:
+                    feature_importances[k] /= num_models_with_fi
+
+            # Sort importances
+            feature_importances = dict(
+                sorted(
+                    feature_importances.items(), key=lambda item: item[1], reverse=True
+                )
+            )
+
+            return {
+                "confidence": confidence_score,
+                "cv_accuracy": cv_accuracy,
+                "feature_importances": feature_importances,
+            }
 
         except Exception as e:
             logger.error(f"Error in AI Predictor: {e}")
-            return 50.0
+            return {"confidence": 50.0, "cv_accuracy": 0.0, "feature_importances": {}}
