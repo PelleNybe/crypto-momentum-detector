@@ -120,6 +120,69 @@ def main():
         )
     )
 
+    layout = Layout()
+    layout.split(Layout(name="header", size=5), Layout(name="body"))
+    layout["header"].update(
+        Panel.fit(
+            "[bold cyan]⚡ NeonPulse AI Crypto Terminal ⚡[/bold cyan]\n"
+            "[dim]Neural Network + Momentum Scanning + Risk Profiling[/dim]\n"
+            "[italic]Developed by Pelle Nyberg (Corax CoLAB)[/italic]",
+            border_style="cyan",
+        )
+    )
+
+    results = []
+
+    with Live(layout, refresh_per_second=4, console=console) as live:
+        with ThreadPoolExecutor(max_workers=min(10, len(args.tickers))) as executor:
+            futures = {
+                executor.submit(
+                    process_ticker,
+                    t,
+                    args.period,
+                    args.interval,
+                    args.use_mtf,
+                    args.backtest,
+                ): t
+                for t in args.tickers
+            }
+
+            # Create a progress table while loading
+            for future in futures:
+                res = future.result()
+                results.append(res)
+
+                # Update layout body with current table
+                layout["body"].update(generate_table(results, args))
+
+    if args.save_svg:
+        console.save_svg("docs/assets/ui_default.svg", title="NeonPulse UI")
+        console.print(
+            f"[bold green]✓[/bold green] Saved terminal output to docs/assets/ui_default.svg"
+        )
+
+    if args.export:
+        export_data = []
+        for r in results:
+            if "error" in r:
+                continue
+            row = {
+                "Ticker": r["ticker"],
+                "Price": r["Price"],
+                "Action": r["Action"],
+                "AI_Confidence": r.get("AI_Confidence", 50),
+                "RSI": r["RSI"],
+                "MACD": r["MACD"],
+                "VPVR_POC": r.get("VPVR_POC", 0),
+                "Ichimoku_Bullish": r.get("Ichimoku_Bullish", False),
+            }
+            if args.backtest and "backtest" in r:
+                row["MC_Return_Pct"] = r["backtest"].get("MC Median Return %", 0)
+                row["Risk_of_Ruin_Pct"] = r["backtest"].get("Risk of Ruin %", 0)
+            export_data.append(row)
+
+        pd.DataFrame(export_data).to_csv(args.export, index=False)
+        console.print(f"[bold green]✓[/bold green] Results exported to {args.export}")
 
 def generate_table(results, args):
     table = Table(box=box.MINIMAL_DOUBLE_HEAD, header_style="bold cyan")
@@ -239,77 +302,7 @@ def generate_table(results, args):
         table.add_row(*row)
     return table
 
-    layout = Layout()
-    layout.split(Layout(name="header", size=5), Layout(name="body"))
-    layout["header"].update(
-        Panel.fit(
-            "[bold cyan]⚡ NeonPulse AI Crypto Terminal ⚡[/bold cyan]\n"
-            "[dim]Neural Network + Momentum Scanning + Risk Profiling[/dim]\n"
-            "[italic]Developed by Pelle Nyberg (Corax CoLAB)[/italic]",
-            border_style="cyan",
-        )
-    )
-
-    results = []
-
-    with Live(layout, refresh_per_second=4, console=console) as live:
-        with ThreadPoolExecutor(max_workers=min(10, len(args.tickers))) as executor:
-            futures = {
-                executor.submit(
-                    process_ticker,
-                    t,
-                    args.period,
-                    args.interval,
-                    args.use_mtf,
-                    args.backtest,
-                ): t
-                for t in args.tickers
-            }
-
-            # Create a progress table while loading
-            for future in futures:
-                res = future.result()
-                results.append(res)
-
-                # Update layout body with current table
-                layout["body"].update(generate_table(results, args))
-
-    if args.save_svg:
-        console.save_svg("docs/assets/ui_default.svg", title="NeonPulse UI")
-        console.print(
-            f"[bold green]✓[/bold green] Saved terminal output to docs/assets/ui_default.svg"
-        )
-
-    if args.save_svg:
-        console.save_svg("docs/assets/ui_default.svg", title="NeonPulse UI")
-        console.print(
-            f"[bold green]✓[/bold green] Saved terminal output to docs/assets/ui_default.svg"
-        )
-
-    # Export logic
-    if args.export:
-        export_data = []
-        for r in results:
-            if "error" in r:
-                continue
-            row = {
-                "Ticker": r["ticker"],
-                "Price": r["Price"],
-                "Action": r["Action"],
-                "AI_Confidence": r.get("AI_Confidence", 50),
-                "RSI": r["RSI"],
-                "MACD": r["MACD"],
-                "VPVR_POC": r.get("VPVR_POC", 0),
-                "Ichimoku_Bullish": r.get("Ichimoku_Bullish", False),
-            }
-            if args.backtest and "backtest" in r:
-                row["MC_Return_Pct"] = r["backtest"].get("MC Median Return %", 0)
-                row["Risk_of_Ruin_Pct"] = r["backtest"].get("Risk of Ruin %", 0)
-            export_data.append(row)
-
-        pd.DataFrame(export_data).to_csv(args.export, index=False)
-        console.print(f"[bold green]✓[/bold green] Results exported to {args.export}")
-
+    return table
 
 if __name__ == "__main__":
     main()
