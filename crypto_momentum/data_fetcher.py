@@ -159,7 +159,9 @@ class DataFetcher:
                     df = pd.read_parquet(cache_path)
                     return df
                 except Exception as e:
-                    pass
+                    logger.warning(
+                        f"Failed to load HTF cache for {self.ticker_symbol}: {e}"
+                    )
 
         logger.info(
             f"Fetching HTF data: {htf_period} with {htf_interval} for {self.ticker_symbol} from API"
@@ -177,8 +179,10 @@ class DataFetcher:
                 result_df = df[["Open", "High", "Low", "Close", "Volume"]]
                 try:
                     result_df.to_parquet(cache_path)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to write HTF cache for {self.ticker_symbol}: {e}"
+                    )
                 result_df = self.clean_outliers(result_df)
                 return result_df
             else:

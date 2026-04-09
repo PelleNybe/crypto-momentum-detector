@@ -184,6 +184,7 @@ def main():
         pd.DataFrame(export_data).to_csv(args.export, index=False)
         console.print(f"[bold green]✓[/bold green] Results exported to {args.export}")
 
+
 def generate_table(results, args):
     table = Table(box=box.MINIMAL_DOUBLE_HEAD, header_style="bold cyan")
     table.add_column("Asset", justify="left", style="bold white")
@@ -303,6 +304,7 @@ def generate_table(results, args):
     return table
 
     return table
+
 
 if __name__ == "__main__":
     main()
