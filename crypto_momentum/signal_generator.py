@@ -154,7 +154,7 @@ class SignalGenerator:
 
         df_valid = df_with_signals.dropna(subset=["Close"])
         if df_valid.empty:
-            return None
+            return {}
         latest = df_valid.iloc[-1]
 
         date_str = (

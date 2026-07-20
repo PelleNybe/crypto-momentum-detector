@@ -36,7 +36,7 @@ class AIPredictor:
     def prepare_features(self):
         """Prepares features and target variable for the model."""
         if self.df.empty or len(self.df) < 50:
-            return None, None
+            return None, None, None
 
         features = [
             "RSI_14",
@@ -56,7 +56,7 @@ class AIPredictor:
         # Check if features exist
         available_features = [f for f in features if f in self.df.columns]
         if len(available_features) < len(features):
-            return None, None
+            return None, None, None
 
         df_ml = self.df.copy()
 
