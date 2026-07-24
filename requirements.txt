@@ -1,6 +1,6 @@
 multitasking<=0.0.11
 yfinance
-pandas>=2.0.3
+pandas>=3.0.5
 ta>=0.11.0
 rich>=13.0.0
 pytest>=8.0.0
