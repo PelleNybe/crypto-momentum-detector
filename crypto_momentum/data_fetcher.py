@@ -99,7 +99,7 @@ class DataFetcher:
             f"Fetching {period} of data with {interval} interval for {self.ticker_symbol} from API"
         )
         try:
-            ticker = yf.Ticker(self.ticker_symbol)
+            ticker = yf.Ticker(self.ticker_symbol, session=self.session)
             df = ticker.history(period=period, interval=interval)
 
             if df.empty:
@@ -167,7 +167,7 @@ class DataFetcher:
             f"Fetching HTF data: {htf_period} with {htf_interval} for {self.ticker_symbol} from API"
         )
         try:
-            ticker = yf.Ticker(self.ticker_symbol)
+            ticker = yf.Ticker(self.ticker_symbol, session=self.session)
             df = ticker.history(period=htf_period, interval=htf_interval)
 
             if df.empty:
