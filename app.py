@@ -172,6 +172,50 @@ with st.sidebar:
     st.divider()
     analyze_button = st.button("🚀 INITIATE SCAN", use_container_width=True)
 
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def process_ticker_cached(ticker, period, interval, use_mtf, run_backtest):
+    try:
+        fetcher = DataFetcher(ticker_symbol=ticker)
+        df = fetcher.fetch_historical_data(period=period, interval=interval)
+
+        htf_df = None
+        if use_mtf:
+            htf_df = fetcher.fetch_htf_data(period=period, interval=interval)
+
+        if df.empty:
+            return {"ticker": ticker, "error": "No data available."}
+
+        indicators = MomentumIndicators(data=df, htf_data=htf_df)
+        df_with_indicators = indicators.calculate_all()
+
+        # Extract VPVR profile for charting before passing to signal generator
+        vpvr_profile = indicators.calculate_vpvr(df_with_indicators)["profile"]
+
+        generator = SignalGenerator(data=df_with_indicators, use_mtf=use_mtf)
+        latest_signal = generator.get_latest_signal()
+
+        if not latest_signal:
+            return {"ticker": ticker, "error": "Failed to generate signals."}
+
+        result = {
+            "ticker": ticker,
+            "df": df_with_indicators,
+            "vpvr_profile": vpvr_profile,
+            **latest_signal,
+        }
+
+        if run_backtest:
+            df_signals = generator.generate_signals()
+            backtester = Backtester(data=df_signals)
+            bt_results = backtester.run()
+            result["backtest"] = bt_results
+
+        return result
+    except Exception as e:
+        return {"ticker": ticker, "error": str(e)}
+
+
 # --- MAIN LOGIC ---
 if analyze_button:
     tickers = [t.strip() for t in tickers_input.split(",") if t.strip()]
@@ -187,50 +231,14 @@ if analyze_button:
     successful_results = []
     total_tickers = len(tickers)
 
-    def process_ticker(ticker):
-        try:
-            fetcher = DataFetcher(ticker_symbol=ticker)
-            df = fetcher.fetch_historical_data(period=period, interval=interval)
-
-            htf_df = None
-            if use_mtf:
-                htf_df = fetcher.fetch_htf_data(period=period, interval=interval)
-
-            if df.empty:
-                return {"ticker": ticker, "error": "No data available."}
-
-            indicators = MomentumIndicators(data=df, htf_data=htf_df)
-            df_with_indicators = indicators.calculate_all()
-
-            # Extract VPVR profile for charting before passing to signal generator
-            vpvr_profile = indicators.calculate_vpvr(df_with_indicators)["profile"]
-
-            generator = SignalGenerator(data=df_with_indicators, use_mtf=use_mtf)
-            latest_signal = generator.get_latest_signal()
-
-            if not latest_signal:
-                return {"ticker": ticker, "error": "Failed to generate signals."}
-
-            result = {
-                "ticker": ticker,
-                "df": df_with_indicators,
-                "vpvr_profile": vpvr_profile,
-                **latest_signal,
-            }
-
-            if run_backtest:
-                df_signals = generator.generate_signals()
-                backtester = Backtester(data=df_signals)
-                bt_results = backtester.run()
-                result["backtest"] = bt_results
-
-            return result
-        except Exception as e:
-            return {"ticker": ticker, "error": str(e)}
-
     # Execute Concurrently
     with ThreadPoolExecutor(max_workers=min(10, total_tickers)) as executor:
-        futures = {executor.submit(process_ticker, t): t for t in tickers}
+        futures = {
+            executor.submit(
+                process_ticker_cached, t, period, interval, use_mtf, run_backtest
+            ): t
+            for t in tickers
+        }
         completed = 0
         for future in futures:
             res = future.result()
