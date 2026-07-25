@@ -32,11 +32,12 @@ class MomentumIndicators:
         ) / 3
         bin_indices = np.digitize(recent_df["Typical_Price"], price_bins)
 
-        volume_profile = np.zeros(bins)
-        for i in range(len(recent_df)):
-            bin_idx = bin_indices[i] - 1
-            if 0 <= bin_idx < bins:
-                volume_profile[bin_idx] += recent_df["Volume"].iloc[i]
+        valid_mask = (bin_indices >= 1) & (bin_indices <= bins)
+        volume_profile = np.bincount(
+            bin_indices[valid_mask] - 1,
+            weights=recent_df["Volume"].values[valid_mask],
+            minlength=bins,
+        ).astype(float)
 
         poc_idx = np.argmax(volume_profile)
         poc_price = (price_bins[poc_idx] + price_bins[poc_idx + 1]) / 2
