@@ -24,7 +24,9 @@ class AIPredictor:
         gb = GradientBoostingClassifier(
             n_estimators=100, learning_rate=0.1, max_depth=5, random_state=42
         )
-        rf = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
+        rf = RandomForestClassifier(
+            n_estimators=100, max_depth=5, random_state=42, n_jobs=-1
+        )
         lr = LogisticRegression(random_state=42, max_iter=1000)
 
         self.model = VotingClassifier(
