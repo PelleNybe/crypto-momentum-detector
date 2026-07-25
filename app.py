@@ -175,13 +175,24 @@ with st.sidebar:
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def process_ticker_cached(ticker, period, interval, use_mtf, run_backtest):
+    import concurrent.futures
+
     try:
         fetcher = DataFetcher(ticker_symbol=ticker)
-        df = fetcher.fetch_historical_data(period=period, interval=interval)
 
-        htf_df = None
-        if use_mtf:
-            htf_df = fetcher.fetch_htf_data(period=period, interval=interval)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            df_future = executor.submit(
+                fetcher.fetch_historical_data, period=period, interval=interval
+            )
+
+            htf_future = None
+            if use_mtf:
+                htf_future = executor.submit(
+                    fetcher.fetch_htf_data, period=period, interval=interval
+                )
+
+            df = df_future.result()
+            htf_df = htf_future.result() if htf_future else None
 
         if df.empty:
             return {"ticker": ticker, "error": "No data available."}
