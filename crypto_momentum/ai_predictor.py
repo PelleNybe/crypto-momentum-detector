@@ -30,7 +30,7 @@ class AIPredictor:
         lr = LogisticRegression(random_state=42, max_iter=1000)
 
         self.model = VotingClassifier(
-            estimators=[("gb", gb), ("rf", rf), ("lr", lr)], voting="soft"
+            estimators=[("gb", gb), ("rf", rf), ("lr", lr)], voting="soft", n_jobs=-1
         )
         self.scaler = StandardScaler()
         self.is_trained = False
@@ -102,9 +102,14 @@ class AIPredictor:
             X_latest_scaled = self.scaler.transform(X_latest)
 
             # Cross validation
-            tscv = TimeSeriesSplit(n_splits=5)
+            tscv = TimeSeriesSplit(n_splits=3)
             cv_scores = cross_val_score(
-                self.model, X_train_scaled, y_train, cv=tscv, scoring="accuracy"
+                self.model,
+                X_train_scaled,
+                y_train,
+                cv=tscv,
+                scoring="accuracy",
+                n_jobs=-1,
             )
             cv_accuracy = cv_scores.mean() * 100
 

@@ -10,3 +10,9 @@
 **Action:**
 1. Extracted `process_ticker` out of `if analyze_button:` and decorated it with `@st.cache_data(ttl=3600, show_spinner=False)` to prevent duplicate API calls and identical model retraining.
 2. Added `n_jobs=-1` to `RandomForestClassifier` inside `ai_predictor.py` to allow multi-threaded parallel model generation during predictions.
+## 2026-07-25 - [Threading and Data Fetching Optimizations]
+**Learning:** Found AI Predictor to be slow due to single-threaded execution, and concurrent fetching in process_ticker was only across tickers, not per ticker.
+**Action:**
+1. Changed n_jobs=-1 in VotingClassifier and cross_val_score inside ai_predictor.py.
+2. Reduced n_splits from 5 to 3 in TimeSeriesSplit.
+3. Implemented ThreadPoolExecutor inside process_ticker (main.py and app.py) for concurrent historical and HTF data fetching.

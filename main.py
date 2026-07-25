@@ -52,12 +52,23 @@ def format_ai_confidence(val):
 
 
 def process_ticker(ticker, period, interval, use_mtf, run_backtest):
-    fetcher = DataFetcher(ticker_symbol=ticker)
-    df = fetcher.fetch_historical_data(period=period, interval=interval)
+    import concurrent.futures
 
-    htf_df = None
-    if use_mtf:
-        htf_df = fetcher.fetch_htf_data(period=period, interval=interval)
+    fetcher = DataFetcher(ticker_symbol=ticker)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        df_future = executor.submit(
+            fetcher.fetch_historical_data, period=period, interval=interval
+        )
+
+        htf_future = None
+        if use_mtf:
+            htf_future = executor.submit(
+                fetcher.fetch_htf_data, period=period, interval=interval
+            )
+
+        df = df_future.result()
+        htf_df = htf_future.result() if htf_future else None
 
     if df.empty:
         return {"ticker": ticker, "error": "No data available."}
