@@ -32,39 +32,50 @@ class Backtester:
         if not trades or len(trades) < 5:
             return {"MC Median Return %": 0.0, "Risk of Ruin %": 0.0}
 
-        sim_returns = []
-        ruin_count = 0
         ruin_threshold = 0.8  # 20% drawdown limit
 
-        for _ in range(self.mc_simulations):
-            # Resample with replacement
-            sim_trades = np.random.choice(trades, size=len(trades), replace=True)
+        # Vectorized Monte Carlo simulation
+        # Create a matrix of resampled trades: shape (mc_simulations, len(trades))
+        sim_trades_mat = np.random.choice(
+            trades, size=(self.mc_simulations, len(trades)), replace=True
+        )
 
-            sim_balance = self.initial_balance
-            max_balance = sim_balance
-            ruin = False
+        # Calculate step multipliers based on position size
+        multipliers = 1 + self.position_size * sim_trades_mat
 
-            for t_return in sim_trades:
-                trade_amount = sim_balance * self.position_size
-                net_profit = trade_amount * t_return
-                sim_balance += net_profit
+        # Calculate balance paths using cumulative product
+        balance_paths = self.initial_balance * np.cumprod(multipliers, axis=1)
 
-                if sim_balance > max_balance:
-                    max_balance = sim_balance
-                elif sim_balance < max_balance * ruin_threshold:
-                    ruin = True
-                    break  # hit max drawdown limit
+        # Prepend initial balance to properly calculate max drawdowns from the start
+        full_paths = np.insert(balance_paths, 0, self.initial_balance, axis=1)
 
-            if ruin:
-                ruin_count += 1
+        # Calculate running maximums
+        running_max = np.maximum.accumulate(full_paths, axis=1)
 
-            sim_return_pct = (
-                (sim_balance - self.initial_balance) / self.initial_balance
-            ) * 100
-            sim_returns.append(sim_return_pct)
+        # Calculate drawdowns at each step
+        drawdowns = full_paths / running_max
 
-        median_return = np.median(sim_returns)
-        risk_of_ruin = (ruin_count / self.mc_simulations) * 100
+        # Find paths that hit the ruin threshold
+        ruin_mask = drawdowns < ruin_threshold
+        ruins = np.any(ruin_mask, axis=1)
+        ruin_count = np.sum(ruins)
+
+        # Find the first index where ruin occurs for each path
+        ruin_indices = np.argmax(ruin_mask, axis=1)
+
+        # Final balances are normally the last element, but if ruin occurred, it's the balance at ruin
+        final_balances = full_paths[:, -1].copy()
+        if ruin_count > 0:
+            ruined_sims = np.where(ruins)[0]
+            final_balances[ruins] = full_paths[ruined_sims, ruin_indices[ruins]]
+
+        # Calculate return percentage
+        sim_returns_new = (
+            (final_balances - self.initial_balance) / self.initial_balance
+        ) * 100
+
+        median_return = float(np.median(sim_returns_new))
+        risk_of_ruin = float((ruin_count / self.mc_simulations) * 100)
 
         return {"MC Median Return %": median_return, "Risk of Ruin %": risk_of_ruin}
 
@@ -94,11 +105,14 @@ class Backtester:
         # Risk management: Risk 2% of capital per trade
         risk_per_trade = 0.02
 
-        for index, row in self.data.iterrows():
-            signal = row["Signal"]
-            price = row["Close"]
-            high = row.get("High", price)
-            low = row.get("Low", price)
+        # Use itertuples for faster iteration
+        for row in self.data.itertuples():
+            index = row.Index
+            signal = row.Signal
+            price = row.Close
+            # itertuples returns namedtuples. Use getattr to safely handle optional columns.
+            high = getattr(row, "High", price)
+            low = getattr(row, "Low", price)
 
             if pd.isna(price):
                 current_value = (
@@ -149,8 +163,8 @@ class Backtester:
             # Process new signals
             if signal in ["BUY", "STRONG BUY"] and balance > 0 and crypto_holdings == 0:
                 # Volatility-based sizing (Risk / (Entry - SL))
-                sl_price = row.get("Stop_Loss", price * 0.95)
-                tp_price = row.get("Take_Profit", price * 1.10)
+                sl_price = getattr(row, "Stop_Loss", price * 0.95)
+                tp_price = getattr(row, "Take_Profit", price * 1.10)
 
                 if pd.isna(sl_price) or sl_price >= price:
                     sl_price = price * 0.95
