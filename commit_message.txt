@@ -1,4 +1,13 @@
-💡 What: Converted thread pool iteration loops in `app.py` and `main.py` to use `concurrent.futures.as_completed(futures)` for true parallel UI update sequencing instead of synchronously resolving in order of creation. Further, switched ML estimator parallelism (`n_jobs=1`) in `ai_predictor.py` to prevent CPU over-subscription which otherwise clashes with the ThreadPoolExecutor that initiates the scans. Also optimized `getattr` fetching in `backtester.py`.
-🎯 Why: Iterating over thread futures dictionary asynchronously blocked UI progress and hindered multi-asset scan speeds. Also, training multiple Scikit-Learn models with `n_jobs=-1` concurrently within a thread pool degraded execution efficiency through thread contention context switching.
-📊 Impact: Speeds up data parsing and user UI updates drastically by reporting in exact completion order, bypassing blockage on longer asset fetches. Avoids thread explosion bottlenecks for up to ~15-20% faster machine learning predictions during grouped asset scans.
-🔬 Measurement: Verify overall multi-ticker scan completion time with `pytest tests/` (which takes ~4s vs ~11s previously on CI).
+Dev, PelleNybe/Corax CoLAB: Update README.md
+
+What:
+Updated `README.md` with marketing-oriented material, new badges, animated text (via `readme-typing-svg`), expandable drop-down menus (`<details>`), prominent visual elements, and dedicated sections for developer Pelle Nyberg and Corax CoLAB.
+
+Why:
+The repository has been heavily updated and the previous README didn't adequately reflect the full scope of features, aesthetic vision (Deep Tech / Cyberpunk), or the branding. The new design serves as a professional marketing tool for the repository.
+
+Impact:
+Enhances the repository's professional appearance, improves readability, highlights system capabilities effectively, and properly attributes the work to Pelle Nyberg and Corax CoLAB.
+
+Measurement:
+Code format via `black` passes, existing tests pass, and visual inspection of `README.md` confirms all links and images render correctly.

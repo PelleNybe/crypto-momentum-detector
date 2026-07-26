@@ -1,28 +1,33 @@
+<div align="center">
+
 # ⚡ NeonPulse: Advanced AI Crypto Trading Terminal
 
-[![Tests](https://img.shields.io/github/actions/workflow/status/PelleNybe/crypto-momentum-detector/tests.yml?branch=main&label=tests&style=for-the-badge&logo=github)](https://github.com/PelleNybe/crypto-momentum-detector/actions)
-[![Python Version](https://img.shields.io/pypi/pyversions/crypto-momentum-detector.svg?style=for-the-badge&logo=python&logoColor=white)](https://pypi.org/project/crypto-momentum-detector/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![Issues](https://img.shields.io/github/issues/PelleNybe/crypto-momentum-detector.svg?style=for-the-badge&logo=github)](https://github.com/PelleNybe/crypto-momentum-detector/issues)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge&logo=github)](http://makeapullrequest.com)
+<a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&weight=600&size=24&pause=1000&color=00FFFF&center=true&vCenter=true&width=800&lines=Welcome+to+the+Future+of+Algorithmic+Trading;AI-Powered+Momentum+Detection;Advanced+Monte+Carlo+Simulations;Institutional-Grade+Backtesting;Beautiful+Cyberpunk+Aesthetics" alt="Typing SVG" /></a>
 
 <br/>
+
+[![Tests](https://img.shields.io/github/actions/workflow/status/PelleNybe/crypto-momentum-detector/tests.yml?branch=main&label=tests&style=for-the-badge&logo=github&color=blue)](https://github.com/PelleNybe/crypto-momentum-detector/actions)
+[![Python Version](https://img.shields.io/pypi/pyversions/crypto-momentum-detector.svg?style=for-the-badge&logo=python&logoColor=white&color=blue)](https://pypi.org/project/crypto-momentum-detector/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![Issues](https://img.shields.io/github/issues/PelleNybe/crypto-momentum-detector.svg?style=for-the-badge&logo=github&color=red)](https://github.com/PelleNybe/crypto-momentum-detector/issues)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge&logo=github)](http://makeapullrequest.com)
+[![Streamlit](https://img.shields.io/badge/Built_with-Streamlit-FF4B4B.svg?style=for-the-badge&logo=Streamlit&logoColor=white)](https://streamlit.io/)
+[![Powered by AI](https://img.shields.io/badge/Powered_by-AI-purple.svg?style=for-the-badge&logo=scikit-learn&logoColor=white)]()
+
 <br/>
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%">
 
 <br/>
 
-<div align="center">
 <h2><b>⚡ A world-class, AI-powered application to analyze cryptocurrency momentum, run Monte Carlo simulations, and generate actionable trading signals with a jaw-dropping UI! ⚡</b></h2>
 
 <br/>
 
-<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMjM1YzlkOGU4MjM2ZjY4ZjY4YmRjYzE2ZDZlNzY1MWRkODMwMjJjZiZlcD12MV9pbnRlcm5hbF9naWZzX2dpZklkJmN0PWc/JtBZm3Getg3dqxEX1E/giphy.gif" width="500" alt="Crypto Trading Animation" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMjM1YzlkOGU4MjM2ZjY4ZjY4YmRjYzE2ZDZlNzY1MWRkODMwMjJjZiZlcD12MV9pbnRlcm5hbF9naWZzX2dpZklkJmN0PWc/JtBZm3Getg3dqxEX1E/giphy.gif" width="600" alt="Crypto Trading Animation" style="border-radius: 15px; box-shadow: 0 8px 16px rgba(0,0,0,0.5); border: 2px solid #00FFFF;">
 
 </div>
 
-<br/>
 <br/>
 
 ## 🌟 Discover the Future of Algorithmic Trading
@@ -33,51 +38,74 @@ Whether you're a day trader hunting for quick setups or a quant researching stra
 
 ---
 
-## 🚀 New World-Class Features
+## 🚀 Key Features & Capabilities
 
+<details>
+<summary><b>🛠️ Performance Improvements (Click to expand)</b></summary>
+<br>
 
-### Performance Improvements:
 1.  **🚀 Vectorized Volume Profile (VPVR)**: Replaced iterative DataFrame looping with `numpy.bincount` for ~380x faster volume profile calculation.
-2.  **⚡ Optimized Monte Carlo Engine**: Switched Monte Carlo backtesting from sequential loops to fully vectorized NumPy matrix operations (cumulative products, max accumulations) resulting in a ~6x speedup.
-3.  **🏎️ Faster Backtest Execution**: Changed Pandas `iterrows` to `itertuples` in the core backtester loop, dramatically reducing the overhead of evaluating trade signals by ~14x.
+2.  **⚡ Optimized Monte Carlo Engine**: Switched Monte Carlo backtesting from sequential loops to fully vectorized NumPy matrix operations resulting in a ~6x speedup.
+3.  **🏎️ Faster Backtest Execution**: Changed Pandas `iterrows` to `itertuples` in the core backtester loop, dramatically reducing overhead by ~14x.
+</details>
 
-### Technical Improvements:
-1.  **📊 Advanced Outlier Detection**: Implementation of robust z-score based outlier detection and linear interpolation during data fetch ensuring indicator calculations are not skewed by price spikes (T5).
-2.  **🧠 Gradient Boosting Ensemble Machine Learning**: The AI Predictive Engine now uses a `VotingClassifier` (Gradient Boosting, Random Forest, Logistic Regression) to vote on probability of positive return (T3).
-3.  **📈 Time Series Cross-Validation**: Added `TimeSeriesSplit` cross-validation for a reliable historical ML model accuracy metric (T4).
-4.  **🛡️ Realistic Backtesting Execution**: Backtester logic updated to incorporate proper Stop Loss and Take Profit evaluation natively checking daily highs and lows. (T1)
-5.  **⚡ ATR Volatility-based Position Sizing**: Replaced flat % sizing with dynamic position sizing that scales based on trade risk and asset volatility. (T2)
+<details>
+<summary><b>🧠 Technical & AI Advancements (Click to expand)</b></summary>
+<br>
 
-### Visual Improvements:
-1.  **📊 Feature Importance Dashboard (V1)**: The Streamlit UI now includes a Plotly Horizontal Bar chart showing exactly which metrics the AI model relied upon.
-2.  **🧠 AI Confidence Gauge (V2)**: A Plotly Interactive Gauge chart visually mapping model confidence metrics in Streamlit.
-3.  **📈 Equity Curve Visualization (V3)**: Added a plotted line-chart showing capital progression over time during backtests.
-4.  **🛡️ Animated Terminal View (V4)**: Converted the static CLI table dump into a real-time updating dashboard using `rich.live`.
-5.  **⚡ Interactive Trade Log (V5)**: Appended an interactive Pandas DataFrame rendering via `st.dataframe` to allow granular trade-by-trade inspection.
+1.  **📊 Advanced Outlier Detection**: Implementation of robust z-score based outlier detection and linear interpolation during data fetch ensuring indicator calculations are not skewed by price spikes.
+2.  **🧠 Gradient Boosting Ensemble Machine Learning**: The AI Predictive Engine now uses a `VotingClassifier` (Gradient Boosting, Random Forest, Logistic Regression) to vote on probability of positive return.
+3.  **📈 Time Series Cross-Validation**: Added `TimeSeriesSplit` cross-validation for a reliable historical ML model accuracy metric.
+4.  **🛡️ Realistic Backtesting Execution**: Backtester logic updated to incorporate proper Stop Loss and Take Profit evaluation natively checking daily highs and lows.
+5.  **⚡ ATR Volatility-based Position Sizing**: Replaced flat % sizing with dynamic position sizing that scales based on trade risk and asset volatility.
+</details>
 
-![Terminal Output](docs/assets/ui_default.svg)
+<details>
+<summary><b>🎨 Visual & UI Enhancements (Click to expand)</b></summary>
+<br>
 
-### Backtest Example
-![Backtest Output](docs/assets/ui_backtest.svg)
+1.  **📊 Feature Importance Dashboard**: The Streamlit UI now includes a Plotly Horizontal Bar chart showing exactly which metrics the AI model relied upon.
+2.  **🧠 AI Confidence Gauge**: A Plotly Interactive Gauge chart visually mapping model confidence metrics in Streamlit.
+3.  **📈 Equity Curve Visualization**: Added a plotted line-chart showing capital progression over time during backtests.
+4.  **🛡️ Animated Terminal View**: Converted the static CLI table dump into a real-time updating dashboard using `rich.live`.
+5.  **⚡ Interactive Trade Log**: Appended an interactive Pandas DataFrame rendering via `st.dataframe` to allow granular trade-by-trade inspection.
+</details>
 
-### MTF Example
-![MTF Output](docs/assets/ui_mtf.svg)
+<br/>
 
-### Multiple Assets Example
-![Multiple Output](docs/assets/ui_multiple.svg)
+### 🎯 Advanced Trading Toolkit
 
+*   **📊 On-Balance Volume (OBV) Divergence Detection**: Automatically flags critical hidden bullish and bearish divergences between price action and cumulative volume flow.
+*   **🧠 Advanced Pattern Recognition Engine**: Scans rolling local extremums to instantly identify Double Top and Double Bottom formations with high precision.
+*   **🛡️ Dynamic Trailing Stop Loss (Chandelier Exit)**: Maximizes profit capture by utilizing an ATR-based Chandelier Exit that scales with volatility, replacing static stops.
+*   **🌐 Market Regime Filter**: Leverages ADX and DI indicators to classify the market state into "Trending Bullish", "Trending Bearish", or "Ranging", allowing for context-aware signals.
+*   **⚡ Stochastic RSI Confluence**: Pinpoints exact momentum shifts using Stochastic RSI %K and %D crossovers for laser-accurate entry timing.
+*   **📈 Volume Weighted Average Price (VWAP)**: A fundamental indicator used by institutional traders, displayed on the interactive candlestick chart to gauge average price matched with volume.
+*   **🏆 Advanced Backtesting Metrics**: Now includes **Sharpe Ratio**, **Sortino Ratio**, and **Profit Factor**, giving you institutional-grade insights into strategy performance alongside Monte Carlo risk of ruin.
 
-1.  **📊 On-Balance Volume (OBV) Divergence Detection**: Automatically flags critical hidden bullish and bearish divergences between price action and cumulative volume flow.
-2.  **🧠 Advanced Pattern Recognition Engine**: Scans rolling local extremums to instantly identify Double Top and Double Bottom formations with high precision.
-3.  **🛡️ Dynamic Trailing Stop Loss (Chandelier Exit)**: Maximizes profit capture by utilizing an ATR-based Chandelier Exit that scales with volatility, replacing static stops.
-4.  **🌐 Market Regime Filter**: Leverages ADX and DI indicators to classify the market state into "Trending Bullish", "Trending Bearish", or "Ranging", allowing for context-aware signals.
-5.  **⚡ Stochastic RSI Confluence**: Pinpoints exact momentum shifts using Stochastic RSI %K and %D crossovers for laser-accurate entry timing.
-6.  **📈 Volume Weighted Average Price (VWAP)**: A fundamental indicator used by institutional traders, displayed on the interactive candlestick chart to gauge average price matched with volume.
-7.  **🏆 Advanced Backtesting Metrics**: Now includes **Sharpe Ratio**, **Sortino Ratio**, and **Profit Factor**, giving you institutional-grade insights into strategy performance alongside Monte Carlo risk of ruin.
-8.  **🤖 Gradient Boosting Machine Learning**: The AI Predictive engine has been upgraded to a powerful Gradient Boosting Classifier, adding ADX, StochRSI, and VWAP features for an unparalleled edge.
+---
 
-*Plus all the legacy features like the Predictive AI Engine, Volume Profile (VPVR), Ichimoku Cloud Confluence, Dynamic Fibonacci Levels, Monte Carlo Risk Profiling, MTF (Multi-Timeframe) support, and PyArrow/Parquet data caching!*
+## 📸 System Screenshots
 
+### 💻 Animated Terminal UI
+<div align="center">
+  <img src="docs/assets/ui_default.svg" width="90%" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.5);">
+</div>
+
+### 📈 Backtest & Equity Curve Analysis
+<div align="center">
+  <img src="docs/assets/ui_backtest.svg" width="90%" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.5);">
+</div>
+
+### 🌐 Multi-Timeframe (MTF) Dashboard
+<div align="center">
+  <img src="docs/assets/ui_mtf.svg" width="90%" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.5);">
+</div>
+
+### 🚀 Multiple Assets Portfolio View
+<div align="center">
+  <img src="docs/assets/ui_multiple.svg" width="90%" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.5);">
+</div>
 
 ---
 
@@ -100,7 +128,7 @@ Get up and running in less than 2 minutes! Ensure you have **Python 3.8+** insta
     pip install -r requirements.txt
     ```
 
-*(Optional but recommended): Install caching engines for 10x faster subsequent runs:*
+*(Optional but highly recommended): Install caching engines for blazing fast subsequent runs:*
 ```bash
 pip install pyarrow fastparquet
 ```
@@ -109,13 +137,13 @@ pip install pyarrow fastparquet
 
 ## 💻 Usage & Commands
 
-Run the new beautiful **Deep Tech / Cyberpunk** Streamlit UI:
+Experience the new beautiful **Deep Tech / Cyberpunk** Streamlit UI by simply running:
 
 ```bash
 streamlit run app.py
 ```
 
-You can still run the CLI tool using `main.py` if you prefer the blazing-fast terminal execution.
+*Prefer the blazing-fast terminal execution? Use the robust CLI tool:*
 
 ### 🟢 Quick Start (CLI Default Run)
 Analyze the default tickers (BTC-USD, ETH-USD) with default settings (6 months period, 1 day interval):
@@ -159,7 +187,7 @@ python main.py --backtest --period 1y --tickers BTC-USD
 
 ## 🧪 Testing and Reliability
 
-We believe in robust code. This project uses `pytest` for unit testing, including mocked API responses to ensure the logic remains sound without hitting external rate limits.
+We believe in robust, production-grade code. This project uses `pytest` for unit testing, including mocked API responses to ensure the logic remains sound without hitting external rate limits.
 
 ```bash
 # Run the test suite
@@ -191,7 +219,7 @@ With a deep passion for financial markets, algorithmic trading, and cutting-edge
 <br/>
 <br/>
 
-<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Briefcase.png" alt="Briefcase" width="45" height="45" />
+<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Briefcase.png" alt="Briefcase" width="60" height="60" />
 
 ### **Corax CoLAB**
 *Innovating the Future of Digital Solutions*
