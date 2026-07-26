@@ -111,8 +111,12 @@ class Backtester:
             signal = row.Signal
             price = row.Close
             # itertuples returns namedtuples. Use getattr to safely handle optional columns.
-            high = getattr(row, "High", price)
-            low = getattr(row, "Low", price)
+            try:
+                high = row.High
+                low = row.Low
+            except AttributeError:
+                high = price
+                low = price
 
             if pd.isna(price):
                 current_value = (

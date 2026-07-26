@@ -16,3 +16,15 @@
 1. Changed n_jobs=-1 in VotingClassifier and cross_val_score inside ai_predictor.py.
 2. Reduced n_splits from 5 to 3 in TimeSeriesSplit.
 3. Implemented ThreadPoolExecutor inside process_ticker (main.py and app.py) for concurrent historical and HTF data fetching.
+
+## 2024-07-25 - [App.py Multithreading UI]
+**Learning:** Found that `process_ticker_cached` in `app.py` is being run sequentially or partly concurrently, but `concurrent.futures.ThreadPoolExecutor` was already somewhat implemented at line 250 in `app.py`.
+## 2024-07-25 - [App.py concurrent tickers bug]
+**Learning:** In `app.py`, `ThreadPoolExecutor` is being used, but `futures` iterates through `for future in futures` which is a dictionary loop on futures and accesses `future.result()` in the loop synchronously in creation order rather than completion order. We should use `concurrent.futures.as_completed(futures)` for true parallel UI updating and speed. Same for `main.py`.
+## 2024-07-25 - [App.py Streamlit execution improvement]
+**Learning:** SignalGenerator in `crypto_momentum/signal_generator.py` looks clean and uses fully vectorized pandas operations to determine Buy/Sell zones (loc and boolean masks). No optimization needed here as it is O(1) in pandas context.
+## 2024-07-25 - [ai_predictor.py optimization]
+**Learning:** `ai_predictor.py` uses `VotingClassifier` with Grid/Random forest, scaled and trained dynamically per ticker. The data pre-processing is vectorized using pandas, but doing this across tickers scales O(n_tickers). The use of `n_jobs=-1` on Random Forest and `VotingClassifier` runs parallel ML model builds per ticker. Since this runs inside `ThreadPoolExecutor`, we have thread contention (Thread Pool runs `n_tickers` workers, and each worker runs `n_cpu` threads).
+**Action:** Restrict `n_jobs=1` inside the ML models to avoid thread contention context switching overhead, since the primary parallelism comes from ticker distribution.
+## 2024-07-25 - [backtester.py performance]
+**Learning:** `backtester.py` simulates trade by trade logic and does not currently vectorise equity curve tracking since decisions rely on previous state variables. Given it uses `itertuples`, it's relatively well optimized for Python iteration. `itertuples()` is generally 10x-20x faster than `iterrows()`. Monte Carlo was already fully vectorized. We can consider it optimized.

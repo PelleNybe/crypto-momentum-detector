@@ -13,3 +13,4 @@ htmlcov/
 .test_cache2/
 *.parquet
 .yfinance_tz_cache/
+venv/
