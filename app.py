@@ -251,7 +251,9 @@ if analyze_button:
             for t in tickers
         }
         completed = 0
-        for future in futures:
+        import concurrent.futures
+
+        for future in concurrent.futures.as_completed(futures):
             res = future.result()
             if "error" not in res:
                 successful_results.append(res)
