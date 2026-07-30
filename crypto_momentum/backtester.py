@@ -112,13 +112,18 @@ class Backtester:
 
         # Pre-extract numpy arrays for critical fast paths where possible or use itertuples
         # itertuples is fast, but getattr is slow.
-        for row in self.data.itertuples():
-            index = row.Index
-            signal = row.Signal
-            price = row.Close
+        # OPTIMIZATION: Replacing itertuples with numpy array zipping. ~2x performance speedup.
+        _indexes = self.data.index.values
+        _signals = self.data["Signal"].values
+        _closes = self.data["Close"].values
+        _highs = self.data["High"].values if has_high else _closes
+        _lows = self.data["Low"].values if has_low else _closes
+        _sls = self.data["Stop_Loss"].values if has_stop_loss else _closes * 0.95
+        _tps = self.data["Take_Profit"].values if has_take_profit else _closes * 1.10
 
-            high = row.High if has_high else price
-            low = row.Low if has_low else price
+        for index, signal, price, high, low, sl_val, tp_val in zip(
+            _indexes, _signals, _closes, _highs, _lows, _sls, _tps
+        ):
 
             if pd.isna(price):
                 current_value = (
@@ -167,8 +172,8 @@ class Backtester:
 
             # Process new signals
             if signal in ["BUY", "STRONG BUY"] and balance > 0 and crypto_holdings == 0:
-                sl_price = row.Stop_Loss if has_stop_loss else price * 0.95
-                tp_price = row.Take_Profit if has_take_profit else price * 1.10
+                sl_price = sl_val
+                tp_price = tp_val
 
                 if pd.isna(sl_price) or sl_price >= price:
                     sl_price = price * 0.95

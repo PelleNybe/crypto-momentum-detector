@@ -42,7 +42,7 @@ def test_data_fetcher_fetch_historical_data(mock_ticker, sample_data):
 
     assert not df.empty
     assert all(col in df.columns for col in ["Open", "High", "Low", "Close", "Volume"])
-    mock_ticker.assert_called_once_with("BTC-USD", session=fetcher.session)
+    mock_ticker.assert_called_once_with("BTC-USD")
     mock_ticker_instance.history.assert_called_once_with(period="5d", interval="1d")
 
 

@@ -33,3 +33,7 @@
 1. Optimized `clean_outliers` in `crypto_momentum/data_fetcher.py` by replacing a per-column loop with vectorized calculations across all price columns, avoiding Python iteration entirely.
 2. Optimized the core backtesting signal evaluation loop (`crypto_momentum/backtester.py`) by pre-checking column existence and using native attribute access via `itertuples()` to avoid the slow `getattr()` inside the hot loop.
 3. Optimized feature importance calculation in `ai_predictor.py` by vectorized addition of feature importances and truncating the dictionary to the top 5, avoiding sorting massive UI bloat arrays and doing it manually in Python loops.
+
+## 2024-07-25 - [Data Fetching Session Fix]
+**Learning:** Using `requests_cache.CachedSession` inside `yfinance` ThreadPoolExecutor threads can cause race conditions or unpicklable session errors on certain environments resulting in `Error: Caching sessions (e.g. requests_cache) are not supported. Solution: stop setting session, let yfinance handle.`
+**Action:** Removed `requests_cache` entirely, letting `yfinance` handle the session by default since we already implemented local `.parquet` file caching which avoids the API limits successfully anyway. This makes the concurrent fetching thread-safe.

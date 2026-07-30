@@ -1,7 +1,6 @@
 import yfinance as yf
 import pandas as pd
 import logging
-import requests_cache
 import os
 import time
 from datetime import datetime, timedelta
@@ -20,9 +19,7 @@ class DataFetcher:
         """
         self.ticker_symbol = ticker_symbol
         self.cache_dir = cache_dir
-        self.session = requests_cache.CachedSession(
-            ".yfinance_cache", expire_after=3600
-        )
+        self.session = None
 
         if not os.path.exists(self.cache_dir):
             os.makedirs(self.cache_dir)
@@ -111,7 +108,7 @@ class DataFetcher:
             f"Fetching {period} of data with {interval} interval for {self.ticker_symbol} from API"
         )
         try:
-            ticker = yf.Ticker(self.ticker_symbol, session=self.session)
+            ticker = yf.Ticker(self.ticker_symbol)
             df = ticker.history(period=period, interval=interval)
 
             if df.empty:
@@ -179,7 +176,7 @@ class DataFetcher:
             f"Fetching HTF data: {htf_period} with {htf_interval} for {self.ticker_symbol} from API"
         )
         try:
-            ticker = yf.Ticker(self.ticker_symbol, session=self.session)
+            ticker = yf.Ticker(self.ticker_symbol)
             df = ticker.history(period=htf_period, interval=htf_interval)
 
             if df.empty:
