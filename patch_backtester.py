@@ -1,88 +1,13 @@
-import pandas as pd
-import logging
-import numpy as np
+import re
 
-logger = logging.getLogger(__name__)
+with open("crypto_momentum/backtester.py", "r") as f:
+    content = f.read()
 
-
-class Backtester:
-    def __init__(
-        self,
-        data: pd.DataFrame,
-        initial_balance: float = 10000.0,
-        fee_rate: float = 0.001,
-        slippage: float = 0.0005,
-        position_size: float = 1.0,
-        mc_simulations: int = 1000,
-    ):
-        """
-        Initializes the Backtester with Monte Carlo capabilities.
-        """
-        self.data = data
-        self.initial_balance = initial_balance
-        self.fee_rate = fee_rate
-        self.slippage = slippage
-        self.position_size = position_size
-        self.mc_simulations = mc_simulations
-
-    def _run_monte_carlo(self, trades: list) -> dict:
-        """
-        Runs Monte Carlo simulations by resampling the historical trades.
-        """
-        if not trades or len(trades) < 5:
-            return {"MC Median Return %": 0.0, "Risk of Ruin %": 0.0}
-
-        ruin_threshold = 0.8  # 20% drawdown limit
-
-        # Vectorized Monte Carlo simulation
-        # Create a matrix of resampled trades: shape (mc_simulations, len(trades))
-        sim_trades_mat = np.random.choice(
-            trades, size=(self.mc_simulations, len(trades)), replace=True
-        )
-
-        # Calculate step multipliers based on position size
-        multipliers = 1 + self.position_size * sim_trades_mat
-
-        # Calculate balance paths using cumulative product
-        balance_paths = self.initial_balance * np.cumprod(multipliers, axis=1)
-
-        # Prepend initial balance to properly calculate max drawdowns from the start
-        full_paths = np.insert(balance_paths, 0, self.initial_balance, axis=1)
-
-        # Calculate running maximums
-        running_max = np.maximum.accumulate(full_paths, axis=1)
-
-        # Calculate drawdowns at each step
-        drawdowns = full_paths / running_max
-
-        # Find paths that hit the ruin threshold
-        ruin_mask = drawdowns < ruin_threshold
-        ruins = np.any(ruin_mask, axis=1)
-        ruin_count = np.sum(ruins)
-
-        # Find the first index where ruin occurs for each path
-        ruin_indices = np.argmax(ruin_mask, axis=1)
-
-        # Final balances are normally the last element, but if ruin occurred, it's the balance at ruin
-        final_balances = full_paths[:, -1].copy()
-        if ruin_count > 0:
-            ruined_sims = np.where(ruins)[0]
-            final_balances[ruins] = full_paths[ruined_sims, ruin_indices[ruins]]
-
-        # Calculate return percentage
-        sim_returns_new = (
-            (final_balances - self.initial_balance) / self.initial_balance
-        ) * 100
-
-        median_return = float(np.median(sim_returns_new))
-        risk_of_ruin = float((ruin_count / self.mc_simulations) * 100)
-
-        return {"MC Median Return %": median_return, "Risk of Ruin %": risk_of_ruin}
-
-    def run(self) -> dict:
-        """
+# Replace the run method with an optimized version that avoids getattr in the loop
+new_run_method = """    def run(self) -> dict:
+        \"\"\"
         Simulates trading based on the 'Signal' column.
-        """
+        \"\"\"
         if (
             self.data is None
             or self.data.empty
@@ -292,4 +217,13 @@ class Backtester:
             "Risk of Ruin %": mc_results["Risk of Ruin %"],
             "Equity Curve": equity_curve,
             "Trade Log": trade_log,
-        }
+        }"""
+
+# Use regex to replace the old run method
+pattern = r"    def run\(self\) -> dict:.*?        return \{\n.*?Trade Log\": trade_log,\n        \}"
+replaced = re.sub(pattern, new_run_method, content, flags=re.DOTALL)
+
+with open("crypto_momentum/backtester.py", "w") as f:
+    f.write(replaced)
+
+print("Patched backtester.py")

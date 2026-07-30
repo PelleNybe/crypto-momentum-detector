@@ -28,3 +28,10 @@
 **Action:** Restrict `n_jobs=1` inside the ML models to avoid thread contention context switching overhead, since the primary parallelism comes from ticker distribution.
 ## 2024-07-25 - [backtester.py performance]
 **Learning:** `backtester.py` simulates trade by trade logic and does not currently vectorise equity curve tracking since decisions rely on previous state variables. Given it uses `itertuples`, it's relatively well optimized for Python iteration. `itertuples()` is generally 10x-20x faster than `iterrows()`. Monte Carlo was already fully vectorized. We can consider it optimized.
+
+## 2024-07-25 - [Performance Optimizations]
+**Learning:** Found several performance bottlenecks in Python processing involving explicit `for` loops and heavy lookups.
+**Action:**
+1. Optimized `clean_outliers` in `crypto_momentum/data_fetcher.py` by replacing a per-column loop with vectorized calculations across all price columns, avoiding Python iteration entirely.
+2. Optimized the core backtesting signal evaluation loop (`crypto_momentum/backtester.py`) by pre-checking column existence and using native attribute access via `itertuples()` to avoid the slow `getattr()` inside the hot loop.
+3. Optimized feature importance calculation in `ai_predictor.py` by vectorized addition of feature importances and truncating the dictionary to the top 5, avoiding sorting massive UI bloat arrays and doing it manually in Python loops.

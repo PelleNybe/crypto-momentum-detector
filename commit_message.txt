@@ -1,13 +1,4 @@
-Dev, PelleNybe/Corax CoLAB: Update README.md
-
-What:
-Updated `README.md` with marketing-oriented material, new badges, animated text (via `readme-typing-svg`), expandable drop-down menus (`<details>`), prominent visual elements, and dedicated sections for developer Pelle Nyberg and Corax CoLAB.
-
-Why:
-The repository has been heavily updated and the previous README didn't adequately reflect the full scope of features, aesthetic vision (Deep Tech / Cyberpunk), or the branding. The new design serves as a professional marketing tool for the repository.
-
-Impact:
-Enhances the repository's professional appearance, improves readability, highlights system capabilities effectively, and properly attributes the work to Pelle Nyberg and Corax CoLAB.
-
-Measurement:
-Code format via `black` passes, existing tests pass, and visual inspection of `README.md` confirms all links and images render correctly.
+💡 What: Optimized Python loops out of hot paths (`data_fetcher.py`, `backtester.py`, `ai_predictor.py`).
+🎯 Why: Iterating over DataFrame columns or using `getattr` in `itertuples` was causing significant CPU bottlenecks compared to vectorized Pandas/Numpy operations.
+📊 Impact: Expected performance improvement is massive for large datasets or multiple tickers.
+🔬 Measurement: Verify by running `python -m pytest tests/` and benchmarking `clean_outliers` or `backtester.run()`.
