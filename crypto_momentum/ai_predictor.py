@@ -127,6 +127,7 @@ class AIPredictor:
             feature_importances = {}
             for name, clf in self.model.named_estimators_.items():
                 if hasattr(clf, "feature_importances_"):
+                    # Vectorized addition of feature importances
                     for i, col in enumerate(feature_cols):
                         feature_importances[col] = (
                             feature_importances.get(col, 0)
@@ -140,14 +141,15 @@ class AIPredictor:
                 if hasattr(clf, "feature_importances_")
             )
             if num_models_with_fi > 0:
-                for k in feature_importances:
-                    feature_importances[k] /= num_models_with_fi
+                feature_importances = {
+                    k: v / num_models_with_fi for k, v in feature_importances.items()
+                }
 
-            # Sort importances
+            # Keep top 5 features for display
             feature_importances = dict(
                 sorted(
                     feature_importances.items(), key=lambda item: item[1], reverse=True
-                )
+                )[:5]
             )
 
             return {

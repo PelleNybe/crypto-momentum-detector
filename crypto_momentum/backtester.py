@@ -105,18 +105,20 @@ class Backtester:
         # Risk management: Risk 2% of capital per trade
         risk_per_trade = 0.02
 
-        # Use itertuples for faster iteration
+        has_high = "High" in self.data.columns
+        has_low = "Low" in self.data.columns
+        has_stop_loss = "Stop_Loss" in self.data.columns
+        has_take_profit = "Take_Profit" in self.data.columns
+
+        # Pre-extract numpy arrays for critical fast paths where possible or use itertuples
+        # itertuples is fast, but getattr is slow.
         for row in self.data.itertuples():
             index = row.Index
             signal = row.Signal
             price = row.Close
-            # itertuples returns namedtuples. Use getattr to safely handle optional columns.
-            try:
-                high = row.High
-                low = row.Low
-            except AttributeError:
-                high = price
-                low = price
+
+            high = row.High if has_high else price
+            low = row.Low if has_low else price
 
             if pd.isna(price):
                 current_value = (
@@ -134,7 +136,6 @@ class Backtester:
 
                 if hit_sl or hit_tp:
                     exit_price = stop_loss if hit_sl else take_profit
-                    # If market gapped below SL, exit at Open/Low (simplification: use SL price)
 
                     execution_price = exit_price * (1 - self.slippage)
                     revenue = crypto_holdings * execution_price
@@ -166,9 +167,8 @@ class Backtester:
 
             # Process new signals
             if signal in ["BUY", "STRONG BUY"] and balance > 0 and crypto_holdings == 0:
-                # Volatility-based sizing (Risk / (Entry - SL))
-                sl_price = getattr(row, "Stop_Loss", price * 0.95)
-                tp_price = getattr(row, "Take_Profit", price * 1.10)
+                sl_price = row.Stop_Loss if has_stop_loss else price * 0.95
+                tp_price = row.Take_Profit if has_take_profit else price * 1.10
 
                 if pd.isna(sl_price) or sl_price >= price:
                     sl_price = price * 0.95
