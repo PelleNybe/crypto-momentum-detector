@@ -97,7 +97,7 @@ class DataFetcher:
                     f"Loading {period}/{interval} for {self.ticker_symbol} from local Parquet cache"
                 )
                 try:
-                    df = pd.read_parquet(cache_path)
+                    df = pd.read_parquet(cache_path, engine="fastparquet")
                     return df
                 except Exception as e:
                     logger.warning(
@@ -122,7 +122,9 @@ class DataFetcher:
 
                 # Save to cache
                 try:
-                    result_df.to_parquet(cache_path)
+                    result_df.to_parquet(
+                        cache_path, engine="fastparquet", compression="snappy"
+                    )
                 except Exception as e:
                     logger.warning(
                         f"Failed to write cache for {self.ticker_symbol}: {e}"
@@ -165,7 +167,7 @@ class DataFetcher:
                     f"Loading HTF {htf_period}/{htf_interval} for {self.ticker_symbol} from cache"
                 )
                 try:
-                    df = pd.read_parquet(cache_path)
+                    df = pd.read_parquet(cache_path, engine="fastparquet")
                     return df
                 except Exception as e:
                     logger.warning(
@@ -187,7 +189,9 @@ class DataFetcher:
             ):
                 result_df = df[["Open", "High", "Low", "Close", "Volume"]]
                 try:
-                    result_df.to_parquet(cache_path)
+                    result_df.to_parquet(
+                        cache_path, engine="fastparquet", compression="snappy"
+                    )
                 except Exception as e:
                     logger.warning(
                         f"Failed to write HTF cache for {self.ticker_symbol}: {e}"
