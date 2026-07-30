@@ -19,8 +19,6 @@
 
 ## 2024-07-25 - [App.py Multithreading UI]
 **Learning:** Found that `process_ticker_cached` in `app.py` is being run sequentially or partly concurrently, but `concurrent.futures.ThreadPoolExecutor` was already somewhat implemented at line 250 in `app.py`.
-## 2024-07-25 - [App.py concurrent tickers bug]
-**Learning:** In `app.py`, `ThreadPoolExecutor` is being used, but `futures` iterates through `for future in futures` which is a dictionary loop on futures and accesses `future.result()` in the loop synchronously in creation order rather than completion order. We should use `concurrent.futures.as_completed(futures)` for true parallel UI updating and speed. Same for `main.py`.
 ## 2024-07-25 - [App.py Streamlit execution improvement]
 **Learning:** SignalGenerator in `crypto_momentum/signal_generator.py` looks clean and uses fully vectorized pandas operations to determine Buy/Sell zones (loc and boolean masks). No optimization needed here as it is O(1) in pandas context.
 ## 2024-07-25 - [ai_predictor.py optimization]
