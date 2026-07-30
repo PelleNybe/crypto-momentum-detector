@@ -110,23 +110,32 @@ class Backtester:
         has_stop_loss = "Stop_Loss" in self.data.columns
         has_take_profit = "Take_Profit" in self.data.columns
 
-        # Pre-extract numpy arrays for critical fast paths where possible or use itertuples
-        # itertuples is fast, but getattr is slow.
-        for row in self.data.itertuples():
-            index = row.Index
-            signal = row.Signal
-            price = row.Close
+        # Pre-extract numpy arrays for critical fast paths
+        # zip() with to_numpy() is ~10x faster than itertuples()
+        indices = self.data.index.to_numpy()
+        signals = self.data["Signal"].to_numpy()
+        closes = self.data["Close"].to_numpy()
+        highs = self.data["High"].to_numpy() if has_high else closes
+        lows = self.data["Low"].to_numpy() if has_low else closes
 
-            high = row.High if has_high else price
-            low = row.Low if has_low else price
+        # Stop loss and take profit columns
+        stop_losses = (
+            self.data["Stop_Loss"].to_numpy()
+            if has_stop_loss
+            else np.full(len(closes), np.nan)
+        )
+        take_profits = (
+            self.data["Take_Profit"].to_numpy()
+            if has_take_profit
+            else np.full(len(closes), np.nan)
+        )
+
+        for index, signal, price, high, low, sl_val, tp_val in zip(
+            indices, signals, closes, highs, lows, stop_losses, take_profits
+        ):
 
             if pd.isna(price):
-                current_value = (
-                    balance + (crypto_holdings * price)
-                    if not pd.isna(price)
-                    else balance
-                )
-                equity_curve.append({"Date": index, "Equity": current_value})
+                equity_curve.append((index, balance))
                 continue
 
             # Check if SL or TP is hit before evaluating new signals
@@ -161,14 +170,13 @@ class Backtester:
                     stop_loss = 0.0
                     take_profit = 0.0
 
-                    current_value = balance
-                    equity_curve.append({"Date": index, "Equity": current_value})
+                    equity_curve.append((index, balance))
                     continue
 
             # Process new signals
             if signal in ["BUY", "STRONG BUY"] and balance > 0 and crypto_holdings == 0:
-                sl_price = row.Stop_Loss if has_stop_loss else price * 0.95
-                tp_price = row.Take_Profit if has_take_profit else price * 1.10
+                sl_price = sl_val if has_stop_loss else price * 0.95
+                tp_price = tp_val if has_take_profit else price * 1.10
 
                 if pd.isna(sl_price) or sl_price >= price:
                     sl_price = price * 0.95
@@ -221,10 +229,10 @@ class Backtester:
                 stop_loss = 0.0
                 take_profit = 0.0
 
-            current_value = balance + (crypto_holdings * price)
-            equity_curve.append({"Date": index, "Equity": current_value})
+            # Instead of a dict, append a tuple for faster building
+            equity_curve.append((index, balance + (crypto_holdings * price)))
 
-        final_price = self.data["Close"].iloc[-1]
+        final_price = closes[-1] if len(closes) > 0 else self.data["Close"].iloc[-1]
         final_balance = balance + (crypto_holdings * final_price)
 
         return_pct = (
@@ -232,31 +240,29 @@ class Backtester:
         ) * 100
 
         if equity_curve:
-            equity_df = pd.DataFrame(equity_curve).set_index("Date")
-            equity_series = equity_df["Equity"]
-            peak = equity_series.cummax()
-            drawdown = (equity_series - peak) / peak
+            # Reconstruct the dict format expected by the frontend
+            equity_curve_dicts = [{"Date": d, "Equity": e} for d, e in equity_curve]
+
+            # Fast numpy-based calculations for drawdown and metrics
+            equity_arr = np.array([e for _, e in equity_curve])
+            peak = np.maximum.accumulate(equity_arr)
+            drawdown = (equity_arr - peak) / peak
             max_drawdown = drawdown.min() * 100
 
-            # Daily returns from equity curve
-            daily_returns = equity_series.pct_change().dropna()
+            # Daily returns
+            returns_arr = np.diff(equity_arr) / equity_arr[:-1]
 
-            # Sharpe Ratio (annualized, assuming daily data)
-            if daily_returns.std() != 0:
-                sharpe_ratio = (daily_returns.mean() / daily_returns.std()) * np.sqrt(
-                    365
-                )
+            if len(returns_arr) > 0 and returns_arr.std() != 0:
+                sharpe_ratio = (returns_arr.mean() / returns_arr.std()) * np.sqrt(365)
+                downside = returns_arr[returns_arr < 0]
+                if len(downside) > 0 and downside.std() != 0:
+                    sortino_ratio = (returns_arr.mean() / downside.std()) * np.sqrt(365)
+                else:
+                    sortino_ratio = 0.0
             else:
                 sharpe_ratio = 0.0
-
-            # Sortino Ratio
-            downside_returns = daily_returns[daily_returns < 0]
-            if not downside_returns.empty and downside_returns.std() != 0:
-                sortino_ratio = (
-                    daily_returns.mean() / downside_returns.std()
-                ) * np.sqrt(365)
-            else:
                 sortino_ratio = 0.0
+
         else:
             max_drawdown = 0.0
             sharpe_ratio = 0.0
@@ -290,6 +296,6 @@ class Backtester:
             "Total Trades": len(trades),
             "MC Median Return %": mc_results["MC Median Return %"],
             "Risk of Ruin %": mc_results["Risk of Ruin %"],
-            "Equity Curve": equity_curve,
+            "Equity Curve": equity_curve_dicts if equity_curve else [],
             "Trade Log": trade_log,
         }
