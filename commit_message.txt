@@ -1,4 +1,6 @@
-💡 What: Optimized Python loops out of hot paths (`data_fetcher.py`, `backtester.py`, `ai_predictor.py`).
-🎯 Why: Iterating over DataFrame columns or using `getattr` in `itertuples` was causing significant CPU bottlenecks compared to vectorized Pandas/Numpy operations.
-📊 Impact: Expected performance improvement is massive for large datasets or multiple tickers.
-🔬 Measurement: Verify by running `python -m pytest tests/` and benchmarking `clean_outliers` or `backtester.run()`.
+Dev, PelleNybe/Corax CoLAB: [performance improvement]
+
+💡 What: Replace ThreadPoolExecutor synchronous access with concurrent.futures.as_completed.
+🎯 Why: Future access was running synchronously in creation order due to for loop.
+📊 Impact: UI and CLI execution are fully parallel, dramatically speeding up rendering.
+🔬 Measurement: Faster time to load UI across multiple tickers.
