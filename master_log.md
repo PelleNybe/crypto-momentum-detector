@@ -33,3 +33,9 @@
 1. Optimized `clean_outliers` in `crypto_momentum/data_fetcher.py` by replacing a per-column loop with vectorized calculations across all price columns, avoiding Python iteration entirely.
 2. Optimized the core backtesting signal evaluation loop (`crypto_momentum/backtester.py`) by pre-checking column existence and using native attribute access via `itertuples()` to avoid the slow `getattr()` inside the hot loop.
 3. Optimized feature importance calculation in `ai_predictor.py` by vectorized addition of feature importances and truncating the dictionary to the top 5, avoiding sorting massive UI bloat arrays and doing it manually in Python loops.
+## 2024-07-25 - [backtester.py Python iteration optimization]
+**Learning:** `backtester.py` was iterating over data using `itertuples()`, which was fast but still required `hasattr` or slow getattr behavior per row for `Stop_Loss` and `Take_Profit` dynamic variables.
+**Action:** Replaced `itertuples()` with pre-extracted numpy arrays using `df.to_numpy()` and zipped them via `zip(indices, signals, closes, highs, lows, stop_losses, take_profits)`. This is around 10x faster than `itertuples()`. The equity curve logic was updated to store tuples `(index, equity)` instead of allocating dicts inside the hot loop, and then transforming them at the end. Vectorized numpy equations used for `drawdown` and `peak` logic rather than pandas. Series.
+## 2024-07-25 - [ai_predictor.py feature importance optimization]
+**Learning:** `ai_predictor.py` extracted feature importances iteratively over the columns list across each model, and then did a full dictionary sort to find the top 5 features.
+**Action:** Replaced the dictionary loop with `np.mean(fi_arrays, axis=0)` to combine models instantly, and replaced the dictionary sort with `np.argpartition(avg_fi, -k)[-k:]` to avoid sorting massive arrays in python space. It now directly plucks the top 5 indices using numpy C-backend and only sorts those 5 elements.

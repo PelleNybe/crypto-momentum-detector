@@ -124,33 +124,25 @@ class AIPredictor:
             confidence_score = prob * 100
 
             # Get feature importances from GB and RF models
-            feature_importances = {}
+            fi_arrays = []
             for name, clf in self.model.named_estimators_.items():
                 if hasattr(clf, "feature_importances_"):
-                    # Vectorized addition of feature importances
-                    for i, col in enumerate(feature_cols):
-                        feature_importances[col] = (
-                            feature_importances.get(col, 0)
-                            + clf.feature_importances_[i]
-                        )
+                    fi_arrays.append(clf.feature_importances_)
 
-            # Average the importances
-            num_models_with_fi = sum(
-                1
-                for clf in self.model.named_estimators_.values()
-                if hasattr(clf, "feature_importances_")
-            )
-            if num_models_with_fi > 0:
-                feature_importances = {
-                    k: v / num_models_with_fi for k, v in feature_importances.items()
-                }
+            feature_importances = {}
+            if fi_arrays:
+                # Fast numpy vectorization across models
+                avg_fi = np.mean(fi_arrays, axis=0)
 
-            # Keep top 5 features for display
-            feature_importances = dict(
-                sorted(
-                    feature_importances.items(), key=lambda item: item[1], reverse=True
-                )[:5]
-            )
+                # Use np.argpartition to find the top 5 indices quickly without full sort
+                k = min(5, len(avg_fi))
+                if k > 0:
+                    top_indices = np.argpartition(avg_fi, -k)[-k:]
+                    # Sort just the top k
+                    top_indices = top_indices[np.argsort(avg_fi[top_indices])[::-1]]
+
+                    for idx in top_indices:
+                        feature_importances[feature_cols[idx]] = float(avg_fi[idx])
 
             return {
                 "confidence": confidence_score,
