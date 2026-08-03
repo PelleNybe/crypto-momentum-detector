@@ -14,3 +14,5 @@ htmlcov/
 *.parquet
 .yfinance_tz_cache/
 venv/
+.env
+*.env
