@@ -149,6 +149,7 @@ with st.sidebar:
         "Target Assets (Comma separated)",
         "BTC-USD, ETH-USD, SOL-USD",
         help="Enter the cryptocurrency tickers you want to analyze, separated by commas. Use Yahoo Finance formats like BTC-USD.",
+        placeholder="e.g. BTC-USD, ETH-USD, ADA-USD",
     )
 
     col1, col2 = st.columns(2)
@@ -261,8 +262,6 @@ if analyze_button:
             for t in tickers
         }
         completed = 0
-        import concurrent.futures
-
         for future in concurrent.futures.as_completed(futures):
             res = future.result()
             if "error" not in res:
@@ -275,8 +274,11 @@ if analyze_button:
     status_text.empty()
 
     if not successful_results:
+        st.toast("🚨 Scanning Failed!", icon="🚨")
         st.error("🚨 System Failure: Could not establish connection to market data.")
         st.stop()
+
+    st.toast("✅ Analysis complete!", icon="✅")
 
     # Portfolio Summary
     st.header("📊 AI Terminal Summary")
