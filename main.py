@@ -160,7 +160,6 @@ def main():
 
             # Create a progress table while loading
             import concurrent.futures
-
             for future in concurrent.futures.as_completed(futures):
                 res = future.result()
                 results.append(res)
