@@ -18,6 +18,10 @@ class DataFetcher:
         Initialize the DataFetcher with a specific cryptocurrency ticker and file-based caching.
         """
         self.ticker_symbol = ticker_symbol
+        # Sanitize ticker to prevent path traversal and injection
+        self.ticker_symbol = "".join(
+            c for c in ticker_symbol if c.isalnum() or c in "-=."
+        )
         self.cache_dir = cache_dir
         self.session = None
 

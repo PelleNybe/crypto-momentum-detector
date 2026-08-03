@@ -146,16 +146,26 @@ with st.sidebar:
     st.header("⚙️ System Config")
 
     tickers_input = st.text_area(
-        "Target Assets (Comma separated)", "BTC-USD, ETH-USD, SOL-USD"
+        "Target Assets (Comma separated)",
+        "BTC-USD, ETH-USD, SOL-USD",
+        help="Enter the cryptocurrency tickers you want to analyze, separated by commas. Use Yahoo Finance formats like BTC-USD.",
     )
 
     col1, col2 = st.columns(2)
     with col1:
         period = st.selectbox(
-            "Time Horizon", ["1mo", "3mo", "6mo", "1y", "2y", "max"], index=3
+            "Time Horizon",
+            ["1mo", "3mo", "6mo", "1y", "2y", "max"],
+            index=3,
+            help="Select the historical data period to analyze.",
         )
     with col2:
-        interval = st.selectbox("Resolution", ["1h", "1d", "1wk", "1mo"], index=1)
+        interval = st.selectbox(
+            "Resolution",
+            ["1h", "1d", "1wk", "1mo"],
+            index=1,
+            help="Select the candlestick time interval.",
+        )
 
     st.subheader("Neural Network & Risk")
     use_mtf = st.checkbox(
