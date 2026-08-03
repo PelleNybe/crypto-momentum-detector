@@ -223,7 +223,7 @@ class Backtester:
             # Instead of a dict, append a tuple for faster building
             equity_curve.append((index, balance + (crypto_holdings * price)))
 
-        final_price = closes[-1] if len(closes) > 0 else self.data["Close"].iloc[-1]
+        final_price = _closes[-1] if len(_closes) > 0 else self.data["Close"].iloc[-1]
         final_balance = balance + (crypto_holdings * final_price)
 
         return_pct = (
