@@ -142,7 +142,7 @@ class MomentumIndicators:
         if self.data is None or self.data.empty or "Close" not in self.data.columns:
             return self.data
 
-        df = self.data.copy()
+        df = self.data
         close = df["Close"]
         high = df.get("High", df["Close"])
         low = df.get("Low", df["Close"])

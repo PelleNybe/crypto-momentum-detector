@@ -98,8 +98,12 @@ class AIPredictor:
             X_latest = X.iloc[[-1]]
 
             # Scale features
-            X_train_scaled = self.scaler.fit_transform(X_train)
-            X_latest_scaled = self.scaler.transform(X_latest)
+            # Convert to numpy before scaling to avoid pandas index overhead during cross_val
+            X_train_np = X_train.to_numpy()
+            X_latest_np = X_latest.to_numpy()
+
+            X_train_scaled = self.scaler.fit_transform(X_train_np)
+            X_latest_scaled = self.scaler.transform(X_latest_np)
 
             # Cross validation
             tscv = TimeSeriesSplit(n_splits=3)
