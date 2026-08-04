@@ -31,7 +31,8 @@ class SignalGenerator:
         if self.data is None or self.data.empty:
             return pd.DataFrame()
 
-        df = self.data.copy()
+        # Optimize memory usage by not copying the dataframe if we only add columns
+        df = self.data
 
         required_cols = [
             "RSI_14",

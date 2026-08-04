@@ -1,5 +1,6 @@
 import yfinance as yf
 import pandas as pd
+import numpy as np
 import logging
 import os
 import time
@@ -18,6 +19,10 @@ class DataFetcher:
         Initialize the DataFetcher with a specific cryptocurrency ticker and file-based caching.
         """
         self.ticker_symbol = ticker_symbol
+        # Sanitize ticker to prevent path traversal and injection
+        self.ticker_symbol = "".join(
+            c for c in ticker_symbol if c.isalnum() or c in "-=."
+        )
         self.cache_dir = cache_dir
         self.session = None
 
@@ -37,8 +42,6 @@ class DataFetcher:
         """
         if df.empty or len(df) < window:
             return df
-
-        import numpy as np
 
         df_clean = df.copy()
         cols_to_clean = [
