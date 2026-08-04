@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from crypto_momentum.ai_predictor import AIPredictor
 
@@ -115,8 +116,8 @@ class SignalGenerator:
         df.loc[valid_mask & strong_buy_cond, "Signal"] = "STRONG BUY"
         df.loc[valid_mask & strong_sell_cond, "Signal"] = "STRONG SELL"
 
-        df["Stop_Loss"] = float("nan")
-        df["Take_Profit"] = float("nan")
+        df["Stop_Loss"] = np.nan
+        df["Take_Profit"] = np.nan
 
         buy_mask = df["Signal"].isin(["BUY", "STRONG BUY"])
         # If we have Chandelier Long, use it, else fallback
@@ -181,8 +182,8 @@ class SignalGenerator:
             "BB_Low": latest["BB_Low"],
             "Action": latest["Signal"],
             "HTF_Trend": latest.get("HTF_Trend", True),
-            "Stop_Loss": latest.get("Stop_Loss", float("nan")),
-            "Take_Profit": latest.get("Take_Profit", float("nan")),
+            "Stop_Loss": latest.get("Stop_Loss", np.nan),
+            "Take_Profit": latest.get("Take_Profit", np.nan),
             "Sparkline_Data": sparkline_data,
             # NEW FEATURES
             "AI_Confidence": ai_confidence.get("confidence", 50.0),
@@ -198,8 +199,8 @@ class SignalGenerator:
             "OBV_Bearish_Div": latest.get("OBV_Bearish_Div", False),
             "VWAP": latest.get("VWAP", 0),
             "Pattern": latest.get("Pattern", "None"),
-            "Chandelier_Long": latest.get("Chandelier_Long", float("nan")),
-            "Chandelier_Short": latest.get("Chandelier_Short", float("nan")),
+            "Chandelier_Long": latest.get("Chandelier_Long", np.nan),
+            "Chandelier_Short": latest.get("Chandelier_Short", np.nan),
             "Market_Regime": latest.get("Market_Regime", "Ranging"),
             "Stoch_Bullish_Cross": latest.get("Stoch_Bullish_Cross", False),
             "Stoch_Bearish_Cross": latest.get("Stoch_Bearish_Cross", False),

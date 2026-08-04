@@ -181,7 +181,11 @@ with st.sidebar:
     )
 
     st.divider()
-    analyze_button = st.button("🚀 INITIATE SCAN", use_container_width=True)
+    analyze_button = st.button(
+        "🚀 INITIATE SCAN",
+        use_container_width=True,
+        help="Click to start fetching data and calculating momentum signals",
+    )
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
