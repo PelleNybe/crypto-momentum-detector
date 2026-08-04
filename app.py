@@ -186,7 +186,6 @@ with st.sidebar:
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def process_ticker_cached(ticker, period, interval, use_mtf, run_backtest):
-    import concurrent.futures
 
     try:
         fetcher = DataFetcher(ticker_symbol=ticker)

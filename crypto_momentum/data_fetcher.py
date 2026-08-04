@@ -1,5 +1,6 @@
 import yfinance as yf
 import pandas as pd
+import numpy as np
 import logging
 import os
 import time
@@ -41,8 +42,6 @@ class DataFetcher:
         """
         if df.empty or len(df) < window:
             return df
-
-        import numpy as np
 
         df_clean = df.copy()
         cols_to_clean = [
