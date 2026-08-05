@@ -146,16 +146,27 @@ with st.sidebar:
     st.header("⚙️ System Config")
 
     tickers_input = st.text_area(
-        "Target Assets (Comma separated)", "BTC-USD, ETH-USD, SOL-USD"
+        "Target Assets (Comma separated)",
+        "BTC-USD, ETH-USD, SOL-USD",
+        help="Enter the cryptocurrency tickers you want to analyze, separated by commas. Use Yahoo Finance formats like BTC-USD.",
+        placeholder="e.g. BTC-USD, ETH-USD, ADA-USD",
     )
 
     col1, col2 = st.columns(2)
     with col1:
         period = st.selectbox(
-            "Time Horizon", ["1mo", "3mo", "6mo", "1y", "2y", "max"], index=3
+            "Time Horizon",
+            ["1mo", "3mo", "6mo", "1y", "2y", "max"],
+            index=3,
+            help="Select the historical data period to analyze.",
         )
     with col2:
-        interval = st.selectbox("Resolution", ["1h", "1d", "1wk", "1mo"], index=1)
+        interval = st.selectbox(
+            "Resolution",
+            ["1h", "1d", "1wk", "1mo"],
+            index=1,
+            help="Select the candlestick time interval.",
+        )
 
     st.subheader("Neural Network & Risk")
     use_mtf = st.checkbox(
@@ -170,12 +181,15 @@ with st.sidebar:
     )
 
     st.divider()
-    analyze_button = st.button("🚀 INITIATE SCAN", use_container_width=True)
+    analyze_button = st.button(
+        "🚀 INITIATE SCAN",
+        use_container_width=True,
+        help="Click to start fetching data and calculating momentum signals",
+    )
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def process_ticker_cached(ticker, period, interval, use_mtf, run_backtest):
-    import concurrent.futures
 
     try:
         fetcher = DataFetcher(ticker_symbol=ticker)
@@ -200,8 +214,8 @@ def process_ticker_cached(ticker, period, interval, use_mtf, run_backtest):
         indicators = MomentumIndicators(data=df, htf_data=htf_df)
         df_with_indicators = indicators.calculate_all()
 
-        # Extract VPVR profile for charting before passing to signal generator
-        vpvr_profile = indicators.calculate_vpvr(df_with_indicators)["profile"]
+        # Extract VPVR profile directly from the instance to avoid recalculating
+        vpvr_profile = indicators.vpvr_profile
 
         generator = SignalGenerator(data=df_with_indicators, use_mtf=use_mtf)
         latest_signal = generator.get_latest_signal()
@@ -251,8 +265,6 @@ if analyze_button:
             for t in tickers
         }
         completed = 0
-        import concurrent.futures
-
         for future in concurrent.futures.as_completed(futures):
             res = future.result()
             if "error" not in res:
@@ -265,8 +277,11 @@ if analyze_button:
     status_text.empty()
 
     if not successful_results:
+        st.toast("🚨 Scanning Failed!", icon="🚨")
         st.error("🚨 System Failure: Could not establish connection to market data.")
         st.stop()
+
+    st.toast("✅ Analysis complete!", icon="✅")
 
     # Portfolio Summary
     st.header("📊 AI Terminal Summary")
