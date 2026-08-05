@@ -30,8 +30,11 @@ class DataFetcher:
             os.makedirs(self.cache_dir)
 
     def _get_cache_path(self, period: str, interval: str) -> str:
+        # Sanitize period and interval to prevent path traversal
+        s_period = "".join(c for c in period if c.isalnum())
+        s_interval = "".join(c for c in interval if c.isalnum())
         return os.path.join(
-            self.cache_dir, f"{self.ticker_symbol}_{period}_{interval}.parquet"
+            self.cache_dir, f"{self.ticker_symbol}_{s_period}_{s_interval}.parquet"
         )
 
     def clean_outliers(

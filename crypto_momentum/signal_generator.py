@@ -121,23 +121,25 @@ class SignalGenerator:
 
         buy_mask = df["Signal"].isin(["BUY", "STRONG BUY"])
         # If we have Chandelier Long, use it, else fallback
-        df.loc[buy_mask, "Stop_Loss"] = (
-            df.loc[buy_mask, "Chandelier_Long"]
-            if "Chandelier_Long" in df.columns
-            else df.loc[buy_mask, "Close"]
-            - (df.loc[buy_mask, "ATR_14"] * self.atr_sl_multiplier)
-        )
+        if "Chandelier_Long" in df.columns:
+            df.loc[buy_mask, "Stop_Loss"] = df.loc[buy_mask, "Chandelier_Long"]
+        else:
+            df.loc[buy_mask, "Stop_Loss"] = df.loc[buy_mask, "Close"] - (
+                df.loc[buy_mask, "ATR_14"] * self.atr_sl_multiplier
+            )
+
         df.loc[buy_mask, "Take_Profit"] = df.loc[buy_mask, "Close"] + (
             df.loc[buy_mask, "ATR_14"] * self.atr_tp_multiplier
         )
 
         sell_mask = df["Signal"].isin(["SELL", "STRONG SELL"])
-        df.loc[sell_mask, "Stop_Loss"] = (
-            df.loc[sell_mask, "Chandelier_Short"]
-            if "Chandelier_Short" in df.columns
-            else df.loc[sell_mask, "Close"]
-            + (df.loc[sell_mask, "ATR_14"] * self.atr_sl_multiplier)
-        )
+        if "Chandelier_Short" in df.columns:
+            df.loc[sell_mask, "Stop_Loss"] = df.loc[sell_mask, "Chandelier_Short"]
+        else:
+            df.loc[sell_mask, "Stop_Loss"] = df.loc[sell_mask, "Close"] + (
+                df.loc[sell_mask, "ATR_14"] * self.atr_sl_multiplier
+            )
+
         df.loc[sell_mask, "Take_Profit"] = df.loc[sell_mask, "Close"] - (
             df.loc[sell_mask, "ATR_14"] * self.atr_tp_multiplier
         )
