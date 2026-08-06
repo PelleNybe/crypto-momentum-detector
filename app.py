@@ -4,7 +4,6 @@ yf.set_tz_cache_location(".yfinance_tz_cache")
 
 import streamlit as st
 import pandas as pd
-import yfinance as yf
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 import math
