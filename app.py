@@ -214,8 +214,8 @@ def process_ticker_cached(ticker, period, interval, use_mtf, run_backtest):
         indicators = MomentumIndicators(data=df, htf_data=htf_df)
         df_with_indicators = indicators.calculate_all()
 
-        # Extract VPVR profile for charting before passing to signal generator
-        vpvr_profile = indicators.calculate_vpvr(df_with_indicators)["profile"]
+        # Extract VPVR profile directly from the instance to avoid recalculating
+        vpvr_profile = indicators.vpvr_profile
 
         generator = SignalGenerator(data=df_with_indicators, use_mtf=use_mtf)
         latest_signal = generator.get_latest_signal()

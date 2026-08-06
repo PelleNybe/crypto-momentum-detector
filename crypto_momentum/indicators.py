@@ -10,6 +10,7 @@ class MomentumIndicators:
     def __init__(self, data: pd.DataFrame, htf_data: pd.DataFrame = None):
         self.data = data
         self.htf_data = htf_data
+        self.vpvr_profile = None
 
     def calculate_vpvr(self, df: pd.DataFrame, bins: int = 50) -> dict:
         """Calculates Volume Profile Visible Range (VPVR) to find the Point of Control (POC)."""
@@ -197,6 +198,7 @@ class MomentumIndicators:
 
         vpvr_data = self.calculate_vpvr(df)
         df["VPVR_POC"] = vpvr_data["poc_price"]
+        self.vpvr_profile = vpvr_data["profile"]
 
         # NEW FEATURES
         # VWAP

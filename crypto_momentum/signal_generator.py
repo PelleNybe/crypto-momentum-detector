@@ -27,8 +27,12 @@ class SignalGenerator:
         self.use_mtf = use_mtf
         self.atr_sl_multiplier = atr_sl_multiplier
         self.atr_tp_multiplier = atr_tp_multiplier
+        self._cached_signals = None
 
     def generate_signals(self) -> pd.DataFrame:
+        if self._cached_signals is not None:
+            return self._cached_signals
+
         if self.data is None or self.data.empty:
             return pd.DataFrame()
 
@@ -144,6 +148,7 @@ class SignalGenerator:
             df.loc[sell_mask, "ATR_14"] * self.atr_tp_multiplier
         )
 
+        self._cached_signals = df
         return df
 
     def get_latest_signal(self) -> dict:
