@@ -82,10 +82,8 @@ def process_ticker(ticker, period, interval, use_mtf, run_backtest):
     if not latest_signal:
         return {"ticker": ticker, "error": "Failed to generate signals."}
 
-    # Get AI Confidence
-    predictor = AIPredictor(df_with_indicators)
-    ai_confidence = predictor.train_and_predict()
-    latest_signal["AI_Confidence"] = ai_confidence
+    # AI Confidence is already calculated inside get_latest_signal()
+    # We do not need to retrain the predictor here.
 
     result = {"ticker": ticker, **latest_signal}
 
