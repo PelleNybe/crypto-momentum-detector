@@ -220,8 +220,11 @@ class Backtester:
                 stop_loss = 0.0
                 take_profit = 0.0
 
-            # Instead of a dict, append a tuple for faster building
-            equity_curve.append((index, balance + (crypto_holdings * price)))
+            # Performance Optimization: Construct dictionary directly instead of tuple
+            # to avoid the later O(n) conversion loop
+            equity_curve.append(
+                {"Date": index, "Equity": balance + (crypto_holdings * price)}
+            )
 
         final_price = _closes[-1] if len(_closes) > 0 else self.data["Close"].iloc[-1]
         final_balance = balance + (crypto_holdings * final_price)
@@ -231,11 +234,10 @@ class Backtester:
         ) * 100
 
         if equity_curve:
-            # Reconstruct the dict format expected by the frontend
-            equity_curve_dicts = [{"Date": d, "Equity": e} for d, e in equity_curve]
+            equity_curve_dicts = equity_curve
 
             # Fast numpy-based calculations for drawdown and metrics
-            equity_arr = np.array([e for _, e in equity_curve])
+            equity_arr = np.array([e["Equity"] for e in equity_curve])
             peak = np.maximum.accumulate(equity_arr)
             drawdown = (equity_arr - peak) / peak
             max_drawdown = drawdown.min() * 100

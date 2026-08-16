@@ -746,6 +746,10 @@ if analyze_button:
                         eq_fig = px.line(
                             eq_df, x="Date", y="Equity", title="Equity Curve"
                         )
+                        eq_fig.update_traces(
+                            line=dict(color="#ff00d4", width=2),
+                            hovertemplate="<b>Date</b>: %{x}<br><b>Equity</b>: $%{y:.2f}<extra></extra>",
+                        )
                         eq_fig.update_layout(
                             height=350,
                             margin=dict(l=20, r=20, t=40, b=20),
@@ -763,7 +767,7 @@ if analyze_button:
                                 zeroline=False,
                             ),
                         )
-                        eq_fig.update_traces(line=dict(color="#ff00d4", width=2))
+
                         st.plotly_chart(eq_fig, use_container_width=True)
 
                 with log_col:
