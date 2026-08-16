@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import logging
 import os
+import hashlib
 import time
 from datetime import datetime, timedelta
 from crypto_momentum.mtf_utils import get_htf_interval, get_htf_period
@@ -19,23 +20,17 @@ class DataFetcher:
         Initialize the DataFetcher with a specific cryptocurrency ticker and file-based caching.
         """
         self.ticker_symbol = ticker_symbol
-        # Sanitize ticker to prevent path traversal and injection
-        self.ticker_symbol = "".join(
-            c for c in ticker_symbol if c.isalnum() or c in "-=."
-        )
         self.cache_dir = cache_dir
         self.session = None
 
         if not os.path.exists(self.cache_dir):
-            os.makedirs(self.cache_dir)
+            os.makedirs(self.cache_dir, exist_ok=True)
 
     def _get_cache_path(self, period: str, interval: str) -> str:
-        # Sanitize period and interval to prevent path traversal
-        s_period = "".join(c for c in period if c.isalnum())
-        s_interval = "".join(c for c in interval if c.isalnum())
-        return os.path.join(
-            self.cache_dir, f"{self.ticker_symbol}_{s_period}_{s_interval}.parquet"
-        )
+        # Security Improvement: Use SHA-256 hash for cache filename to prevent path traversal
+        raw_key = f"{self.ticker_symbol}_{period}_{interval}"
+        safe_hash = hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
+        return os.path.join(self.cache_dir, f"{safe_hash}.parquet")
 
     def clean_outliers(
         self, df: pd.DataFrame, window: int = 20, num_std: float = 4.0
