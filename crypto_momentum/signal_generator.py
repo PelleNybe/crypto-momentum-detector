@@ -84,16 +84,14 @@ class SignalGenerator:
             htf_bearish = pd.Series(True, index=df.index)
 
         is_bullish = (
-            (rsi > self.rsi_buy_min)
-            & (rsi < self.rsi_buy_max)
+            rsi.between(self.rsi_buy_min, self.rsi_buy_max, inclusive="neither")
             & (macd > macd_signal)
             & (close > ema_20)
             & htf_bullish
             & (ichimoku_bullish | (close > ema_50))  # Added confluence check
         )
         is_bearish = (
-            (rsi < self.rsi_sell_max)
-            & (rsi > self.rsi_sell_min)
+            rsi.between(self.rsi_sell_min, self.rsi_sell_max, inclusive="neither")
             & (macd < macd_signal)
             & (close < ema_20)
             & htf_bearish
@@ -113,12 +111,15 @@ class SignalGenerator:
             & htf_bearish
         )
 
-        df["Signal"] = "HOLD"
-
-        df.loc[valid_mask & is_bullish, "Signal"] = "BUY"
-        df.loc[valid_mask & is_bearish, "Signal"] = "SELL"
-        df.loc[valid_mask & strong_buy_cond, "Signal"] = "STRONG BUY"
-        df.loc[valid_mask & strong_sell_cond, "Signal"] = "STRONG SELL"
+        # OPTIMIZATION: Vectorized np.select instead of multiple df.loc assignments
+        conditions = [
+            valid_mask & strong_buy_cond,
+            valid_mask & strong_sell_cond,
+            valid_mask & is_bullish,
+            valid_mask & is_bearish,
+        ]
+        choices = ["STRONG BUY", "STRONG SELL", "BUY", "SELL"]
+        df["Signal"] = np.select(conditions, choices, default="HOLD")
 
         df["Stop_Loss"] = np.nan
         df["Take_Profit"] = np.nan

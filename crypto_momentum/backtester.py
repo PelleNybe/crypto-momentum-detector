@@ -113,8 +113,16 @@ class Backtester:
         # Pre-extract numpy arrays for critical fast paths where possible or use itertuples
         # itertuples is fast, but getattr is slow.
         # OPTIMIZATION: Replacing itertuples with numpy array zipping. ~2x performance speedup.
+        # OPTIMIZATION: Map string signals to integers before the hot loop.
+        signal_map = {
+            "BUY": 1,
+            "STRONG BUY": 1,
+            "SELL": -1,
+            "STRONG SELL": -1,
+            "HOLD": 0,
+        }
         _indexes = self.data.index.values
-        _signals = self.data["Signal"].values
+        _signals = np.array([signal_map.get(s, 0) for s in self.data["Signal"].values])
         _closes = self.data["Close"].values
         _highs = self.data["High"].values if has_high else _closes
         _lows = self.data["Low"].values if has_low else _closes
@@ -165,7 +173,7 @@ class Backtester:
                     continue
 
             # Process new signals
-            if signal in ["BUY", "STRONG BUY"] and balance > 0 and crypto_holdings == 0:
+            if signal == 1 and balance > 0 and crypto_holdings == 0:
                 sl_price = sl_val
                 tp_price = tp_val
 
@@ -194,7 +202,7 @@ class Backtester:
                     stop_loss = sl_price
                     take_profit = tp_price
 
-            elif signal in ["SELL", "STRONG SELL"] and crypto_holdings > 0:
+            elif signal == -1 and crypto_holdings > 0:
                 execution_price = price * (1 - self.slippage)
                 revenue = crypto_holdings * execution_price
                 fee = revenue * self.fee_rate

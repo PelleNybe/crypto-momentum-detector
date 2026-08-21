@@ -176,7 +176,8 @@ class MomentumIndicators:
         atr = AverageTrueRange(high=high, low=low, close=close, window=14)
         df["ATR_14"] = atr.average_true_range()
 
-        try:
+        # Performance: Pre-check length instead of relying on slow try-except block
+        if len(close) >= 52:
             ichimoku = IchimokuIndicator(
                 high=high, low=low, window1=9, window2=26, window3=52
             )
@@ -190,7 +191,7 @@ class MomentumIndicators:
             df["Ichimoku_Bearish"] = (close < df["Ichimoku_SpanA"]) & (
                 close < df["Ichimoku_SpanB"]
             )
-        except Exception as e:
+        else:
             df["Ichimoku_Bullish"] = False
             df["Ichimoku_Bearish"] = False
 

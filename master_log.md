@@ -41,3 +41,15 @@
 ## 2024-05-15 - [Optimize detect_patterns]
 **Learning:** Found an O(N) python loop used in pandas DataFrame to detect Double Top/Bottom patterns. It was iterating over every row using `range(len(df))` which is an anti-pattern.
 **Action:** Replaced it with vectorized numpy/pandas operations using `.where()`, `.shift(1).ffill()`, and boolean masking. This resulted in a ~50x speedup for pattern detection.
+
+## 2024-07-25 - [UX, Performance and Security Optimizations]
+**Learning:** Found various UX improvements, performance bottlenecks with string comparison and looping, and cache permission issues.
+**Action:**
+1. Optimized `signal_generator.py` by replacing multiple `df.loc` calls with vectorized `np.select` and using `rsi.between()`.
+2. Optimized `backtester.py` loop by mapping string signals to integers before loop evaluation for faster execution.
+3. Enhanced UX in `app.py` by adding tooltips to sidebar inputs, hover effects for buttons in custom CSS, and toast notification for execution time.
+4. Added execution time output to `main.py` CLI view.
+5. Optimized `ai_predictor.py` memory handling using `df.assign()` and vectorized percent change calculation.
+6. Refined `indicators.py` to use a length pre-check (O(1)) instead of a try-except block for Ichimoku.
+7. Secured `data_fetcher.py` by restricting cache directory permissions (`mode=0o700`) during creation.
+8. Pinned `multitasking<=0.0.11` in `requirements.txt` to fix GitHub Actions CI failures on Python 3.8 and 3.9 where `TypeError: 'type' object is not subscriptable` was thrown by yfinance dependencies.

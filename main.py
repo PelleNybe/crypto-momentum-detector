@@ -120,6 +120,10 @@ def main():
 
     args = parser.parse_args()
 
+    import time
+
+    start_time = time.time()
+
     console.print(
         Panel.fit(
             "[bold cyan]⚡ NeonPulse AI Crypto Terminal ⚡[/bold cyan]\n"
@@ -194,6 +198,9 @@ def main():
 
         pd.DataFrame(export_data).to_csv(args.export, index=False)
         console.print(f"[bold green]✓[/bold green] Results exported to {args.export}")
+
+    execution_time = time.time() - start_time
+    console.print(f"\n[dim]Analysis completed in {execution_time:.2f} seconds[/dim]")
 
 
 def generate_table(results, args):

@@ -24,7 +24,8 @@ class DataFetcher:
         self.session = None
 
         if not os.path.exists(self.cache_dir):
-            os.makedirs(self.cache_dir, exist_ok=True)
+            # Security: Restrict cache directory permissions to owner (rwx------)
+            os.makedirs(self.cache_dir, mode=0o700, exist_ok=True)
 
     def _get_cache_path(self, period: str, interval: str) -> str:
         # Security Improvement: Use SHA-256 hash for cache filename to prevent path traversal
