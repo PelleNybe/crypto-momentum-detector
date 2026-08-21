@@ -62,12 +62,12 @@ class AIPredictor:
 
         df_ml = self.df.copy()
 
-        # Calculate derived features
-        df_ml["Price_Change"] = df_ml["Close"].pct_change(fill_method=None)
-        df_ml["SMA_Diff"] = (df_ml["SMA_20"] - df_ml["SMA_50"]) / df_ml["SMA_50"]
-
-        # Target: 1 if next period's return is positive, 0 otherwise
-        df_ml["Target"] = (df_ml["Close"].shift(-1) > df_ml["Close"]).astype(int)
+        # Calculate derived features efficiently to avoid dataframe fragmentation
+        df_ml = df_ml.assign(
+            Price_Change=(df_ml["Close"] / df_ml["Close"].shift(1)) - 1,
+            SMA_Diff=(df_ml["SMA_20"] - df_ml["SMA_50"]) / df_ml["SMA_50"],
+            Target=(df_ml["Close"].shift(-1) > df_ml["Close"]).astype(int),
+        )
 
         # Drop rows with NaN values created by indicators or shift
         df_ml = df_ml.dropna()

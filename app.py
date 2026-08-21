@@ -252,6 +252,9 @@ if analyze_button:
     progress_bar = st.progress(0)
     status_text = st.empty()
 
+    import time
+
+    start_time = time.time()
     successful_results = []
     total_tickers = len(tickers)
 
