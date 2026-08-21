@@ -52,3 +52,4 @@
 5. Optimized `ai_predictor.py` memory handling using `df.assign()` and vectorized percent change calculation.
 6. Refined `indicators.py` to use a length pre-check (O(1)) instead of a try-except block for Ichimoku.
 7. Secured `data_fetcher.py` by restricting cache directory permissions (`mode=0o700`) during creation.
+8. Pinned `multitasking<=0.0.11` in `requirements.txt` to fix GitHub Actions CI failures on Python 3.8 and 3.9 where `TypeError: 'type' object is not subscriptable` was thrown by yfinance dependencies.
