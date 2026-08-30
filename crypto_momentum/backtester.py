@@ -134,7 +134,7 @@ class Backtester:
         ):
 
             if pd.isna(price):
-                equity_curve.append((index, balance))
+                equity_curve.append({"Date": index, "Equity": balance})
                 continue
 
             # Check if SL or TP is hit before evaluating new signals
@@ -169,7 +169,7 @@ class Backtester:
                     stop_loss = 0.0
                     take_profit = 0.0
 
-                    equity_curve.append((index, balance))
+                    equity_curve.append({"Date": index, "Equity": balance})
                     continue
 
             # Process new signals
