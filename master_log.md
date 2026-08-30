@@ -56,4 +56,4 @@
 
 ## 2026-08-30 - [Bugfix and Completeness Review]
 **Learning:** Found that `backtester.py` was crashing when trying to create an equity curve plot because it was trying to append a tuple when the downstream code expected a dictionary.
-**Action:** Fixed `equity_curve.append((index, balance))` to `equity_curve.append({"Date": index, "Equity": balance})` in `crypto_momentum/backtester.py`. Also reviewed all code for any fake placeholders and found none. Code is robust and optimized with pandas and numpy vectorization.
+**Action:** Fixed `equity_curve.append((index, balance))` to `equity_curve.append({"Date": index, "Equity": balance})` in `crypto_momentum/backtester.py`.
