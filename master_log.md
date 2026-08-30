@@ -53,3 +53,7 @@
 6. Refined `indicators.py` to use a length pre-check (O(1)) instead of a try-except block for Ichimoku.
 7. Secured `data_fetcher.py` by restricting cache directory permissions (`mode=0o700`) during creation.
 8. Pinned `multitasking<=0.0.11` in `requirements.txt` to fix GitHub Actions CI failures on Python 3.8 and 3.9 where `TypeError: 'type' object is not subscriptable` was thrown by yfinance dependencies.
+
+## 2026-08-30 - [Bugfix and Completeness Review]
+**Learning:** Found that `backtester.py` was crashing when trying to create an equity curve plot because it was trying to append a tuple when the downstream code expected a dictionary.
+**Action:** Fixed `equity_curve.append((index, balance))` to `equity_curve.append({"Date": index, "Equity": balance})` in `crypto_momentum/backtester.py`. Also reviewed all code for any fake placeholders and found none. Code is robust and optimized with pandas and numpy vectorization.
