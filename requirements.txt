@@ -1,12 +1,12 @@
 multitasking<=0.0.13
 yfinance
-pandas>=2.0.0
+pandas>=1.5.0
 ta>=0.11.0
-rich>=15.0.0
-pytest>=9.1.1
+rich
+pytest
 requests-cache>=1.3.3
 streamlit>=1.62.0
 plotly>=7.0.0
-scikit-learn>=1.9.0
+scikit-learn
 fastparquet
 pyarrow
