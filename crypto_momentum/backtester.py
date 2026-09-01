@@ -35,10 +35,11 @@ class Backtester:
         ruin_threshold = 0.8  # 20% drawdown limit
 
         # Vectorized Monte Carlo simulation
-        # Create a matrix of resampled trades: shape (mc_simulations, len(trades))
-        sim_trades_mat = np.random.choice(
-            trades, size=(self.mc_simulations, len(trades)), replace=True
+        # Performance optimization: Use random integers to index instead of random choice on array for faster sampling
+        indices = np.random.randint(
+            0, len(trades), size=(self.mc_simulations, len(trades))
         )
+        sim_trades_mat = np.array(trades)[indices]
 
         # Calculate step multipliers based on position size
         multipliers = 1 + self.position_size * sim_trades_mat

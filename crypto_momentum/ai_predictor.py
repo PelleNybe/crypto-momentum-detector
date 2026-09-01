@@ -99,8 +99,9 @@ class AIPredictor:
 
             # Scale features
             # Convert to numpy before scaling to avoid pandas index overhead during cross_val
-            X_train_np = X_train.to_numpy()
-            X_latest_np = X_latest.to_numpy()
+            # Performance Improvement: Convert to float32 to reduce memory footprint and speed up execution
+            X_train_np = X_train.to_numpy(dtype=np.float32)
+            X_latest_np = X_latest.to_numpy(dtype=np.float32)
 
             X_train_scaled = self.scaler.fit_transform(X_train_np)
             X_latest_scaled = self.scaler.transform(X_latest_np)

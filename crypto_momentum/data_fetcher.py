@@ -127,6 +127,8 @@ class DataFetcher:
                     result_df.to_parquet(
                         cache_path, engine="fastparquet", compression="snappy"
                     )
+                    # Security Improvement: Ensure cached files have strict permissions
+                    os.chmod(cache_path, 0o600)
                 except Exception as e:
                     logger.warning(
                         f"Failed to write cache for {self.ticker_symbol}: {e}"
@@ -194,6 +196,8 @@ class DataFetcher:
                     result_df.to_parquet(
                         cache_path, engine="fastparquet", compression="snappy"
                     )
+                    # Security Improvement: Ensure cached files have strict permissions
+                    os.chmod(cache_path, 0o600)
                 except Exception as e:
                     logger.warning(
                         f"Failed to write HTF cache for {self.ticker_symbol}: {e}"

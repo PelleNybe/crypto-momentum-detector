@@ -45,8 +45,10 @@ Whether you're a day trader hunting for quick setups or a quant researching stra
 <br>
 
 1.  **🚀 Vectorized Volume Profile (VPVR)**: Replaced iterative DataFrame looping with `numpy.bincount` for ~380x faster volume profile calculation.
-2.  **⚡ Optimized Monte Carlo Engine**: Switched Monte Carlo backtesting from sequential loops to fully vectorized NumPy matrix operations resulting in a ~6x speedup.
+2.  **⚡ Optimized Monte Carlo Engine**: Switched Monte Carlo backtesting from sequential loops to fully vectorized NumPy matrix operations resulting in a ~6x speedup, and optimized random sampling using integer indexing.
 3.  **🏎️ Faster Backtest Execution**: Changed Pandas `iterrows` to `itertuples` in the core backtester loop, dramatically reducing overhead by ~14x.
+4.  **📉 Memory Efficient ML**: AI Predictor now uses `float32` numpy arrays for feature processing, significantly reducing memory footprint.
+5.  **🚀 Vectorized Signal Generator**: Replaced `.loc` index assignments with lightning-fast `np.where` for Stop Loss and Take Profit calculations.
 </details>
 
 <details>
@@ -55,6 +57,7 @@ Whether you're a day trader hunting for quick setups or a quant researching stra
 
 1.  **📊 Advanced Outlier Detection**: Implementation of robust z-score based outlier detection and linear interpolation during data fetch ensuring indicator calculations are not skewed by price spikes.
 2.  **🧠 Gradient Boosting Ensemble Machine Learning**: The AI Predictive Engine now uses a `VotingClassifier` (Gradient Boosting, Random Forest, Logistic Regression) to vote on probability of positive return.
+3.  **🔒 Secure Data Caching**: Cached Parquet data files now enforce strict `0o600` POSIX permissions ensuring robust local security.
 3.  **📈 Time Series Cross-Validation**: Added `TimeSeriesSplit` cross-validation for a reliable historical ML model accuracy metric.
 4.  **🛡️ Realistic Backtesting Execution**: Backtester logic updated to incorporate proper Stop Loss and Take Profit evaluation natively checking daily highs and lows.
 5.  **⚡ ATR Volatility-based Position Sizing**: Replaced flat % sizing with dynamic position sizing that scales based on trade risk and asset volatility.
