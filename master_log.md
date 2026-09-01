@@ -57,3 +57,14 @@
 ## 2026-08-30 - [Bugfix and Completeness Review]
 **Learning:** Found that `backtester.py` was crashing when trying to create an equity curve plot because it was trying to append a tuple when the downstream code expected a dictionary.
 **Action:** Fixed `equity_curve.append((index, balance))` to `equity_curve.append({"Date": index, "Equity": balance})` in `crypto_momentum/backtester.py`.
+
+## 2024-09-01 - [UX, Performance and Security Optimizations 2]
+**Learning:** Found various UX improvements, performance bottlenecks with string comparison and looping, and cache permission issues.
+**Action:**
+1. Optimized `crypto_momentum/signal_generator.py` by replacing `.loc` assignments for Stop Loss and Take Profit with `np.where`.
+2. Improved security in `crypto_momentum/data_fetcher.py` by ensuring cached `.parquet` files are written with strict permissions (`0o600`).
+3. Reduced memory footprint and execution time in `crypto_momentum/ai_predictor.py` by enforcing `dtype=np.float32` when converting to numpy arrays.
+4. Formatted the Trade Log dataframe in `app.py` for better readability using `.style.format` and hiding the index.
+5. Optimized Monte Carlo simulation in `crypto_momentum/backtester.py` by using random integers for indexing instead of `np.random.choice` on the array.
+6. Added a loading spinner with text for the ThreadPoolExecutor execution block in `app.py`.
+7. Added tooltips to the MTF trend filter sidebar checkbox in `app.py`.

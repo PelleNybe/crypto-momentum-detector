@@ -778,7 +778,19 @@ if analyze_button:
                     if trade_log:
                         st.write("**Trade Log**")
                         tl_df = pd.DataFrame(trade_log)
-                        tl_df["Return %"] = tl_df["Return %"].round(2)
-                        st.dataframe(tl_df, height=350, use_container_width=True)
+                        # UX Improvement: Format currency and percentages properly in dataframe
+                        styled_df = tl_df.style.format(
+                            {
+                                "Entry Price": "${:,.2f}",
+                                "Exit Price": "${:,.2f}",
+                                "Return %": "{:.2f}%",
+                            }
+                        )
+                        st.dataframe(
+                            styled_df,
+                            height=350,
+                            use_container_width=True,
+                            hide_index=True,
+                        )
                     else:
                         st.write("No trades executed.")
