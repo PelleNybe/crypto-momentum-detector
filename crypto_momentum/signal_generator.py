@@ -185,9 +185,17 @@ class SignalGenerator:
 
         sparkline_data = df_with_signals["Close"].tail(14).tolist()
 
+        # Calculate 24h (1 period) percentage change
+        if len(df_valid) >= 2:
+            prev_close = df_valid.iloc[-2]["Close"]
+            change_24h = ((latest["Close"] - prev_close) / prev_close) * 100
+        else:
+            change_24h = 0.0
+
         return {
             "Date": date_str,
             "Price": latest["Close"],
+            "Change_24h": change_24h,
             "RSI": latest["RSI_14"],
             "MACD": latest["MACD"],
             "MACD_Signal": latest["MACD_Signal"],

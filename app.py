@@ -272,7 +272,7 @@ if analyze_button:
             if "error" not in res:
                 successful_results.append(res)
             completed += 1
-            progress_bar.progress(completed / total_tickers)
+            progress_bar.progress(completed / total_tickers, text=f"Scanning {t}...")
             status_text.text(f"Scanning the matrix... {completed}/{total_tickers}")
 
     progress_bar.empty()
@@ -283,7 +283,8 @@ if analyze_button:
         st.error("🚨 System Failure: Could not establish connection to market data.")
         st.stop()
 
-    st.toast("✅ Analysis complete!", icon="✅")
+    execution_time = time.time() - start_time
+    st.toast(f"✅ Analysis complete in {execution_time:.2f}s!", icon="✅")
 
     # Portfolio Summary
     st.header("📊 AI Terminal Summary")

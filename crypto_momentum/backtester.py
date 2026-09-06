@@ -101,7 +101,6 @@ class Backtester:
         entry_price = 0.0
         stop_loss = 0.0
         take_profit = 0.0
-        equity_curve = []
 
         # Risk management: Risk 2% of capital per trade
         risk_per_trade = 0.02
@@ -130,12 +129,18 @@ class Backtester:
         _sls = self.data["Stop_Loss"].values if has_stop_loss else _closes * 0.95
         _tps = self.data["Take_Profit"].values if has_take_profit else _closes * 1.10
 
+        # Performance Optimization: Pre-allocate a list of fixed size since we know the max length
+        num_rows = len(_indexes)
+        equity_curve = [None] * num_rows
+        eq_idx = 0
+
         for index, signal, price, high, low, sl_val, tp_val in zip(
             _indexes, _signals, _closes, _highs, _lows, _sls, _tps
         ):
 
             if pd.isna(price):
-                equity_curve.append({"Date": index, "Equity": balance})
+                equity_curve[eq_idx] = {"Date": index, "Equity": balance}
+                eq_idx += 1
                 continue
 
             # Check if SL or TP is hit before evaluating new signals
@@ -170,7 +175,8 @@ class Backtester:
                     stop_loss = 0.0
                     take_profit = 0.0
 
-                    equity_curve.append({"Date": index, "Equity": balance})
+                    equity_curve[eq_idx] = {"Date": index, "Equity": balance}
+                    eq_idx += 1
                     continue
 
             # Process new signals
@@ -229,11 +235,12 @@ class Backtester:
                 stop_loss = 0.0
                 take_profit = 0.0
 
-            # Performance Optimization: Construct dictionary directly instead of tuple
-            # to avoid the later O(n) conversion loop
-            equity_curve.append(
-                {"Date": index, "Equity": balance + (crypto_holdings * price)}
-            )
+            # Performance Optimization: Pre-allocated array assignment
+            equity_curve[eq_idx] = {
+                "Date": index,
+                "Equity": balance + (crypto_holdings * price),
+            }
+            eq_idx += 1
 
         final_price = _closes[-1] if len(_closes) > 0 else self.data["Close"].iloc[-1]
         final_balance = balance + (crypto_holdings * final_price)
@@ -242,6 +249,8 @@ class Backtester:
             (final_balance - self.initial_balance) / self.initial_balance
         ) * 100
 
+        # Remove any trailing Nones if SL/TP skips caused the index to advance without hitting the end condition
+        equity_curve = [x for x in equity_curve[:eq_idx] if x is not None]
         if equity_curve:
             equity_curve_dicts = equity_curve
 
