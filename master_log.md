@@ -68,3 +68,12 @@
 5. Optimized Monte Carlo simulation in `crypto_momentum/backtester.py` by using random integers for indexing instead of `np.random.choice` on the array.
 6. Added a loading spinner with text for the ThreadPoolExecutor execution block in `app.py`.
 7. Added tooltips to the MTF trend filter sidebar checkbox in `app.py`.
+
+## 2026-09-06 - [Performance, UX and Security Optimizations]
+**Learning:** Found missing input validation, unoptimized object creation within the core logic hot path, and missing dynamic UI feedback.
+**Action:**
+1. Implemented strict regular expression input validation (`^[A-Za-z0-9\-=]+$`) in `main.py` and `crypto_momentum/data_fetcher.py` to prevent invalid characters and potential directory traversal attacks during Parquet cache writing.
+2. Optimized `crypto_momentum/backtester.py` core execution loop by replacing iterative `list.append` operations with preallocated, fixed-size lists initialized via `[None] * num_rows`, removing dynamic memory reallocation overhead and improving iteration speed.
+3. Enhanced UI/UX by exposing 1-period (24h) percentage changes (`Change_24h`) in `crypto_momentum/signal_generator.py` and implementing it as visual delta indicators on Streamlit's `st.metric` cards.
+4. Added Custom CSS animations in `app.py` for hover effects (`transform: translateY`) on metrics and buttons, providing interactive visual feedback.
+5. Improved UI user feedback loops by embedding dynamic text in `st.progress` during concurrent fetching, and injecting processing time metrics directly into final `st.toast` alerts.

@@ -1,3 +1,4 @@
+import re
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -19,7 +20,12 @@ class DataFetcher:
         """
         Initialize the DataFetcher with a specific cryptocurrency ticker and file-based caching.
         """
+
+        if not re.match(r"^[A-Za-z0-9\-]+$", ticker_symbol):
+            logger.error(f"Invalid ticker symbol format: {ticker_symbol}")
+            raise ValueError(f"Invalid ticker symbol format: {ticker_symbol}")
         self.ticker_symbol = ticker_symbol
+
         self.cache_dir = cache_dir
         self.session = None
 

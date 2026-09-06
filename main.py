@@ -120,6 +120,21 @@ def main():
 
     args = parser.parse_args()
 
+    import re
+
+    valid_tickers = []
+    for t in args.tickers:
+        if re.match(r"^[A-Za-z0-9\-]+$", t):
+            valid_tickers.append(t)
+        else:
+            console.print(f"[red]Warning: Invalid ticker format '{t}' ignored.[/red]")
+
+    args.tickers = valid_tickers
+
+    if not args.tickers:
+        console.print("[red]Error: No valid tickers provided. Exiting.[/red]")
+        return
+
     import time
 
     start_time = time.time()
