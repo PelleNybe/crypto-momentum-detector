@@ -14,6 +14,7 @@ class Backtester:
         slippage: float = 0.0005,
         position_size: float = 1.0,
         mc_simulations: int = 1000,
+        risk_per_trade: float = 0.02,
     ):
         """
         Initializes the Backtester with Monte Carlo capabilities.
@@ -24,6 +25,7 @@ class Backtester:
         self.slippage = slippage
         self.position_size = position_size
         self.mc_simulations = mc_simulations
+        self.risk_per_trade = risk_per_trade
 
     def _run_monte_carlo(self, trades: list) -> dict:
         """
@@ -102,8 +104,8 @@ class Backtester:
         stop_loss = 0.0
         take_profit = 0.0
 
-        # Risk management: Risk 2% of capital per trade
-        risk_per_trade = 0.02
+        # Risk management
+        risk_per_trade = self.risk_per_trade
 
         has_high = "High" in self.data.columns
         has_low = "Low" in self.data.columns

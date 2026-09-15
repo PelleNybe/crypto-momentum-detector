@@ -179,6 +179,45 @@ with st.sidebar:
         help="Run historical simulation with 1000 iteration Monte Carlo risk analysis.",
     )
 
+    with st.expander("🔧 Signal Config"):
+        rsi_buy_min = st.slider("RSI Buy Min", 10, 50, 40)
+        rsi_buy_max = st.slider("RSI Buy Max", 50, 90, 70)
+        rsi_sell_min = st.slider("RSI Sell Min", 10, 50, 30)
+        rsi_sell_max = st.slider("RSI Sell Max", 50, 90, 60)
+        atr_sl_mult = st.number_input(
+            "ATR SL Multiplier", min_value=0.5, max_value=5.0, value=1.5, step=0.1
+        )
+        atr_tp_mult = st.number_input(
+            "ATR TP Multiplier", min_value=1.0, max_value=10.0, value=3.0, step=0.1
+        )
+
+    with st.expander("⚙️ Backtest Config"):
+        initial_balance = st.number_input(
+            "Initial Balance ($)",
+            min_value=100.0,
+            max_value=1000000.0,
+            value=10000.0,
+            step=100.0,
+        )
+        risk_per_trade = (
+            st.number_input(
+                "Risk per Trade (%)", min_value=0.1, max_value=10.0, value=2.0, step=0.1
+            )
+            / 100.0
+        )
+        fee_rate = (
+            st.number_input(
+                "Fee Rate (%)", min_value=0.0, max_value=1.0, value=0.1, step=0.01
+            )
+            / 100.0
+        )
+        slippage = (
+            st.number_input(
+                "Slippage (%)", min_value=0.0, max_value=1.0, value=0.05, step=0.01
+            )
+            / 100.0
+        )
+
     st.divider()
     analyze_button = st.button(
         "🚀 INITIATE SCAN",
@@ -188,7 +227,23 @@ with st.sidebar:
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
-def process_ticker_cached(ticker, period, interval, use_mtf, run_backtest):
+def process_ticker_cached(
+    ticker,
+    period,
+    interval,
+    use_mtf,
+    run_backtest,
+    rsi_buy_min,
+    rsi_buy_max,
+    rsi_sell_min,
+    rsi_sell_max,
+    atr_sl_mult,
+    atr_tp_mult,
+    initial_balance,
+    risk_per_trade,
+    fee_rate,
+    slippage,
+):
 
     try:
         fetcher = DataFetcher(ticker_symbol=ticker)
@@ -216,7 +271,16 @@ def process_ticker_cached(ticker, period, interval, use_mtf, run_backtest):
         # Extract VPVR profile directly from the instance to avoid recalculating
         vpvr_profile = indicators.vpvr_profile
 
-        generator = SignalGenerator(data=df_with_indicators, use_mtf=use_mtf)
+        generator = SignalGenerator(
+            data=df_with_indicators,
+            use_mtf=use_mtf,
+            rsi_buy_min=rsi_buy_min,
+            rsi_buy_max=rsi_buy_max,
+            rsi_sell_min=rsi_sell_min,
+            rsi_sell_max=rsi_sell_max,
+            atr_sl_multiplier=atr_sl_mult,
+            atr_tp_multiplier=atr_tp_mult,
+        )
         latest_signal = generator.get_latest_signal()
 
         if not latest_signal:
@@ -231,7 +295,13 @@ def process_ticker_cached(ticker, period, interval, use_mtf, run_backtest):
 
         if run_backtest:
             df_signals = generator.generate_signals()
-            backtester = Backtester(data=df_signals)
+            backtester = Backtester(
+                data=df_signals,
+                initial_balance=initial_balance,
+                fee_rate=fee_rate,
+                slippage=slippage,
+                risk_per_trade=risk_per_trade,
+            )
             bt_results = backtester.run()
             result["backtest"] = bt_results
 
@@ -262,7 +332,22 @@ if analyze_button:
     with ThreadPoolExecutor(max_workers=min(10, total_tickers)) as executor:
         futures = {
             executor.submit(
-                process_ticker_cached, t, period, interval, use_mtf, run_backtest
+                process_ticker_cached,
+                t,
+                period,
+                interval,
+                use_mtf,
+                run_backtest,
+                rsi_buy_min,
+                rsi_buy_max,
+                rsi_sell_min,
+                rsi_sell_max,
+                atr_sl_mult,
+                atr_tp_mult,
+                initial_balance,
+                risk_per_trade,
+                fee_rate,
+                slippage,
             ): t
             for t in tickers
         }
@@ -334,464 +419,549 @@ if analyze_button:
     # Detailed Charts
     st.header("📈 Deep Tech Chart Analysis")
 
-    for r in successful_results:
-        df = r["df"]
-        ticker = r["ticker"]
-        ai_conf = r.get("AI_Confidence", 50)
+    # Create tabs for each ticker
+    ticker_names = [r["ticker"] for r in successful_results]
+    if ticker_names:
+        ticker_tabs = st.tabs(ticker_names)
 
-        conf_class = (
-            "ai-confidence-high"
-            if ai_conf > 60
-            else "ai-confidence-mid" if ai_conf >= 40 else "ai-confidence-low"
-        )
+        for i, r in enumerate(successful_results):
+            with ticker_tabs[i]:
+                df = r["df"]
+                ticker = r["ticker"]
+                ai_conf = r.get("AI_Confidence", 50)
 
-        with st.expander(
-            f"{ticker} | SIGNAL: {r['Action']} | AI CONFIDENCE: {ai_conf:.1f}%",
-            expanded=True,
-        ):
-
-            st.markdown(
-                f"<h3 style='text-align: center; margin-bottom: 0;'><span class='{conf_class}'>AI CONFIDENCE: {ai_conf:.1f}%</span></h3>",
-                unsafe_allow_html=True,
-            )
-
-            # Create subplots including Volume Profile
-            fig = make_subplots(
-                rows=3,
-                cols=2,
-                column_widths=[0.8, 0.2],
-                shared_xaxes=True,
-                vertical_spacing=0.05,
-                horizontal_spacing=0.01,
-                row_heights=[0.6, 0.2, 0.2],
-                specs=[
-                    [{"type": "xy"}, {"type": "xy"}],
-                    [{"type": "xy", "colspan": 2}, None],
-                    [{"type": "xy", "colspan": 2}, None],
-                ],
-            )
-
-            # --- Candlestick chart ---
-            fig.add_trace(
-                go.Candlestick(
-                    x=df.index,
-                    open=df["Open"],
-                    high=df["High"],
-                    low=df["Low"],
-                    close=df["Close"],
-                    name="Price",
-                    increasing_line_color="#14f5ee",
-                    decreasing_line_color="#ff00d4",
-                    increasing_fillcolor="rgba(20, 245, 238, 0.4)",
-                    decreasing_fillcolor="rgba(255, 0, 212, 0.4)",
-                ),
-                row=1,
-                col=1,
-            )
-
-            # --- VWAP ---
-            if "VWAP" in df.columns:
-                fig.add_trace(
-                    go.Scatter(
-                        x=df.index,
-                        y=df["VWAP"],
-                        line=dict(color="#f9ca24", width=1.5, dash="dot"),
-                        name="VWAP",
-                    ),
-                    row=1,
-                    col=1,
+                conf_class = (
+                    "ai-confidence-high"
+                    if ai_conf > 60
+                    else "ai-confidence-mid" if ai_conf >= 40 else "ai-confidence-low"
                 )
 
-            # --- WORLD CLASS FEATURE: Ichimoku Cloud Plotting ---
-            if "Ichimoku_SpanA" in df.columns and "Ichimoku_SpanB" in df.columns:
-                # Standard Ichimoku plots are shifted 26 periods forward, but we align them with price here for display.
-                # To draw a filled cloud, we add Span A and Span B.
-                fig.add_trace(
-                    go.Scatter(
-                        x=df.index,
-                        y=df["Ichimoku_SpanA"],
-                        line=dict(color="rgba(20, 245, 238, 0.3)", width=1),
-                        name="Span A",
-                    ),
-                    row=1,
-                    col=1,
-                )
-                fig.add_trace(
-                    go.Scatter(
-                        x=df.index,
-                        y=df["Ichimoku_SpanB"],
-                        line=dict(color="rgba(255, 0, 212, 0.3)", width=1),
-                        fill="tonexty",
-                        fillcolor="rgba(100, 100, 100, 0.1)",
-                        name="Span B",
-                    ),
-                    row=1,
-                    col=1,
+                st.markdown(
+                    f"<h3 style='text-align: center; margin-bottom: 0;'><span class='{conf_class}'>AI CONFIDENCE: {ai_conf:.1f}% | SIGNAL: {r['Action']}</span></h3>",
+                    unsafe_allow_html=True,
                 )
 
-            # --- WORLD CLASS FEATURE: Fibonacci Retracements ---
-            if "Fib_0" in df.columns:
-                last_fib0 = df["Fib_0"].iloc[-1]
-                last_fib5 = df["Fib_0.5"].iloc[-1]
-                last_fib1 = df["Fib_1"].iloc[-1]
-
-                fig.add_hline(
-                    y=last_fib0,
-                    line_dash="dash",
-                    line_color="red",
-                    opacity=0.3,
-                    row=1,
-                    col=1,
-                    annotation_text="Fib 0",
-                )
-                fig.add_hline(
-                    y=last_fib5,
-                    line_dash="dash",
-                    line_color="yellow",
-                    opacity=0.3,
-                    row=1,
-                    col=1,
-                    annotation_text="Fib 0.5",
-                )
-                fig.add_hline(
-                    y=last_fib1,
-                    line_dash="dash",
-                    line_color="green",
-                    opacity=0.3,
-                    row=1,
-                    col=1,
-                    annotation_text="Fib 1",
+                # Create sub-tabs for organizing content
+                sub_tabs = st.tabs(
+                    ["📊 Technical Chart", "🤖 AI Engine", "📈 Backtest & Trade Log"]
                 )
 
-            # --- WORLD CLASS FEATURE: Volume Profile (VPVR) ---
-            vpvr_profile = r.get("vpvr_profile", pd.DataFrame())
-            if not vpvr_profile.empty:
-                y_vals = (vpvr_profile["Price_Start"] + vpvr_profile["Price_End"]) / 2
-                fig.add_trace(
-                    go.Bar(
-                        y=y_vals,
-                        x=vpvr_profile["Volume"],
-                        orientation="h",
-                        marker_color="rgba(249, 202, 36, 0.3)",
-                        showlegend=False,
-                    ),
-                    row=1,
-                    col=2,
-                )
-                # Add POC Line on Main Chart
-                poc_price = r.get("VPVR_POC", 0)
-                if poc_price > 0:
-                    fig.add_hline(
-                        y=poc_price,
-                        line_width=2,
-                        line_color="#f9ca24",
+                with sub_tabs[0]:
+                    # Create subplots including Volume Profile
+                    fig = make_subplots(
+                        rows=3,
+                        cols=2,
+                        column_widths=[0.8, 0.2],
+                        shared_xaxes=True,
+                        vertical_spacing=0.05,
+                        horizontal_spacing=0.01,
+                        row_heights=[0.6, 0.2, 0.2],
+                        specs=[
+                            [{"type": "xy"}, {"type": "xy"}],
+                            [{"type": "xy", "colspan": 2}, None],
+                            [{"type": "xy", "colspan": 2}, None],
+                        ],
+                    )
+
+                    # --- Candlestick chart ---
+                    fig.add_trace(
+                        go.Candlestick(
+                            x=df.index,
+                            open=df["Open"],
+                            high=df["High"],
+                            low=df["Low"],
+                            close=df["Close"],
+                            name="Price",
+                            increasing_line_color="#14f5ee",
+                            decreasing_line_color="#ff00d4",
+                            increasing_fillcolor="rgba(20, 245, 238, 0.4)",
+                            decreasing_fillcolor="rgba(255, 0, 212, 0.4)",
+                        ),
                         row=1,
                         col=1,
-                        annotation_text="POC",
                     )
 
-            # --- RSI ---
-            if "RSI_14" in df.columns:
-                fig.add_trace(
-                    go.Scatter(
-                        x=df.index,
-                        y=df["RSI_14"],
-                        line=dict(color="#ff00d4", width=2),
-                        name="RSI 14",
-                    ),
-                    row=2,
-                    col=1,
-                )
-                fig.add_hline(
-                    y=70,
-                    line_dash="dash",
-                    line_color="#ff00d4",
-                    opacity=0.5,
-                    row=2,
-                    col=1,
-                )
-                fig.add_hline(
-                    y=30,
-                    line_dash="dash",
-                    line_color="#14f5ee",
-                    opacity=0.5,
-                    row=2,
-                    col=1,
-                )
+                    # --- VWAP ---
+                    if "VWAP" in df.columns:
+                        fig.add_trace(
+                            go.Scatter(
+                                x=df.index,
+                                y=df["VWAP"],
+                                line=dict(color="#f9ca24", width=1.5, dash="dot"),
+                                name="VWAP",
+                            ),
+                            row=1,
+                            col=1,
+                        )
 
-            # --- MACD ---
-            if "MACD" in df.columns and "MACD_Signal" in df.columns:
-                fig.add_trace(
-                    go.Scatter(
-                        x=df.index,
-                        y=df["MACD"],
-                        line=dict(color="#686de0", width=1.5),
-                        name="MACD",
-                    ),
-                    row=3,
-                    col=1,
-                )
-                fig.add_trace(
-                    go.Scatter(
-                        x=df.index,
-                        y=df["MACD_Signal"],
-                        line=dict(color="#f9ca24", width=1.5),
-                        name="Signal",
-                    ),
-                    row=3,
-                    col=1,
-                )
-                macd_hist = df["MACD"] - df["MACD_Signal"]
-                colors = ["#14f5ee" if val >= 0 else "#ff00d4" for val in macd_hist]
-                fig.add_trace(
-                    go.Bar(
-                        x=df.index, y=macd_hist, marker_color=colors, name="Histogram"
-                    ),
-                    row=3,
-                    col=1,
-                )
+                    # --- WORLD CLASS FEATURE: Ichimoku Cloud Plotting ---
+                    if (
+                        "Ichimoku_SpanA" in df.columns
+                        and "Ichimoku_SpanB" in df.columns
+                    ):
+                        # Standard Ichimoku plots are shifted 26 periods forward, but we align them with price here for display.
+                        # To draw a filled cloud, we add Span A and Span B.
+                        fig.add_trace(
+                            go.Scatter(
+                                x=df.index,
+                                y=df["Ichimoku_SpanA"],
+                                line=dict(color="rgba(20, 245, 238, 0.3)", width=1),
+                                name="Span A",
+                            ),
+                            row=1,
+                            col=1,
+                        )
+                        fig.add_trace(
+                            go.Scatter(
+                                x=df.index,
+                                y=df["Ichimoku_SpanB"],
+                                line=dict(color="rgba(255, 0, 212, 0.3)", width=1),
+                                fill="tonexty",
+                                fillcolor="rgba(100, 100, 100, 0.1)",
+                                name="Span B",
+                            ),
+                            row=1,
+                            col=1,
+                        )
 
-            # Update layout
-            fig.update_layout(
-                title=dict(
-                    text=f"<b>{ticker} AI & TECHNICAL ANALYSIS</b>",
-                    font=dict(family="Orbitron", size=20, color="#14f5ee"),
-                ),
-                xaxis_rangeslider_visible=False,
-                height=900,
-                template="plotly_dark",
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(15, 15, 30, 0.6)",
-                font=dict(family="Rajdhani", color="#e0e0e0", size=14),
-                hovermode="x unified",
-                margin=dict(l=20, r=20, t=60, b=20),
-            )
+                    # --- WORLD CLASS FEATURE: Fibonacci Retracements ---
+                    if "Fib_0" in df.columns:
+                        last_fib0 = df["Fib_0"].iloc[-1]
+                        last_fib5 = df["Fib_0.5"].iloc[-1]
+                        last_fib1 = df["Fib_1"].iloc[-1]
 
-            # Hide axes for VPVR
-            fig.update_xaxes(
-                showticklabels=False, showgrid=False, zeroline=False, row=1, col=2
-            )
-            fig.update_yaxes(
-                showticklabels=False, showgrid=False, zeroline=False, row=1, col=2
-            )
+                        fig.add_hline(
+                            y=last_fib0,
+                            line_dash="dash",
+                            line_color="red",
+                            opacity=0.3,
+                            row=1,
+                            col=1,
+                            annotation_text="Fib 0",
+                        )
+                        fig.add_hline(
+                            y=last_fib5,
+                            line_dash="dash",
+                            line_color="yellow",
+                            opacity=0.3,
+                            row=1,
+                            col=1,
+                            annotation_text="Fib 0.5",
+                        )
+                        fig.add_hline(
+                            y=last_fib1,
+                            line_dash="dash",
+                            line_color="green",
+                            opacity=0.3,
+                            row=1,
+                            col=1,
+                            annotation_text="Fib 1",
+                        )
 
-            st.plotly_chart(fig, use_container_width=True)
+                    # --- WORLD CLASS FEATURE: Volume Profile (VPVR) ---
+                    vpvr_profile = r.get("vpvr_profile", pd.DataFrame())
+                    if not vpvr_profile.empty:
+                        y_vals = (
+                            vpvr_profile["Price_Start"] + vpvr_profile["Price_End"]
+                        ) / 2
+                        fig.add_trace(
+                            go.Bar(
+                                y=y_vals,
+                                x=vpvr_profile["Volume"],
+                                orientation="h",
+                                marker_color="rgba(249, 202, 36, 0.3)",
+                                showlegend=False,
+                            ),
+                            row=1,
+                            col=2,
+                        )
+                        # Add POC Line on Main Chart
+                        poc_price = r.get("VPVR_POC", 0)
+                        if poc_price > 0:
+                            fig.add_hline(
+                                y=poc_price,
+                                line_width=2,
+                                line_color="#f9ca24",
+                                row=1,
+                                col=1,
+                                annotation_text="POC",
+                            )
 
-            # --- AI DASHBOARD ---
-            st.markdown(
-                "<h3 style='text-align: center; color: #14f5ee; font-family: Orbitron;'>AI PREDICTIVE ENGINE</h3>",
-                unsafe_allow_html=True,
-            )
+                    # --- RSI ---
+                    if "RSI_14" in df.columns:
+                        fig.add_trace(
+                            go.Scatter(
+                                x=df.index,
+                                y=df["RSI_14"],
+                                line=dict(color="#ff00d4", width=2),
+                                name="RSI 14",
+                            ),
+                            row=2,
+                            col=1,
+                        )
+                        fig.add_hline(
+                            y=70,
+                            line_dash="dash",
+                            line_color="#ff00d4",
+                            opacity=0.5,
+                            row=2,
+                            col=1,
+                        )
+                        fig.add_hline(
+                            y=30,
+                            line_dash="dash",
+                            line_color="#14f5ee",
+                            opacity=0.5,
+                            row=2,
+                            col=1,
+                        )
 
-            ai_col1, ai_col2 = st.columns([1, 2])
+                    # --- MACD ---
+                    if "MACD" in df.columns and "MACD_Signal" in df.columns:
+                        fig.add_trace(
+                            go.Scatter(
+                                x=df.index,
+                                y=df["MACD"],
+                                line=dict(color="#686de0", width=1.5),
+                                name="MACD",
+                            ),
+                            row=3,
+                            col=1,
+                        )
+                        fig.add_trace(
+                            go.Scatter(
+                                x=df.index,
+                                y=df["MACD_Signal"],
+                                line=dict(color="#f9ca24", width=1.5),
+                                name="Signal",
+                            ),
+                            row=3,
+                            col=1,
+                        )
+                        macd_hist = df["MACD"] - df["MACD_Signal"]
+                        colors = [
+                            "#14f5ee" if val >= 0 else "#ff00d4" for val in macd_hist
+                        ]
+                        fig.add_trace(
+                            go.Bar(
+                                x=df.index,
+                                y=macd_hist,
+                                marker_color=colors,
+                                name="Histogram",
+                            ),
+                            row=3,
+                            col=1,
+                        )
 
-            with ai_col1:
-                # V2: Plotly Gauge chart for AI Confidence
-                conf = r.get("AI_Confidence", 50.0)
-                cv_acc = r.get("AI_CV_Accuracy", 0.0)
-
-                gauge_fig = go.Figure(
-                    go.Indicator(
-                        mode="gauge+number",
-                        value=conf,
-                        domain={"x": [0, 1], "y": [0, 1]},
-                        title={
-                            "text": "Confidence (Bullish)",
-                            "font": {"color": "#14f5ee"},
-                        },
-                        gauge={
-                            "axis": {
-                                "range": [0, 100],
-                                "tickwidth": 1,
-                                "tickcolor": "#e0e0e0",
-                            },
-                            "bar": {"color": "#14f5ee" if conf >= 50 else "#ff00d4"},
-                            "bgcolor": "rgba(0,0,0,0)",
-                            "borderwidth": 2,
-                            "bordercolor": "#686de0",
-                            "steps": [
-                                {"range": [0, 40], "color": "rgba(255, 0, 212, 0.2)"},
-                                {"range": [40, 60], "color": "rgba(249, 202, 36, 0.2)"},
-                                {
-                                    "range": [60, 100],
-                                    "color": "rgba(20, 245, 238, 0.2)",
-                                },
-                            ],
-                            "threshold": {
-                                "line": {"color": "red", "width": 4},
-                                "thickness": 0.75,
-                                "value": 50,
-                            },
-                        },
-                    )
-                )
-                gauge_fig.update_layout(
-                    height=250,
-                    margin=dict(l=20, r=20, t=30, b=20),
-                    paper_bgcolor="rgba(0,0,0,0)",
-                    font=dict(color="#e0e0e0"),
-                )
-                st.plotly_chart(gauge_fig, use_container_width=True)
-                st.markdown(
-                    f"<p style='text-align:center;'>CV Accuracy: {cv_acc:.1f}%</p>",
-                    unsafe_allow_html=True,
-                )
-
-            with ai_col2:
-                # V1: Plotly horizontal bar chart for AI Feature Importances
-                fi = r.get("AI_Feature_Importances", {})
-                if fi:
-                    # Take top 10 features
-                    top_fi = dict(list(fi.items())[:10])
-                    fi_df = pd.DataFrame(
-                        {
-                            "Feature": list(top_fi.keys()),
-                            "Importance": list(top_fi.values()),
-                        }
-                    )
-                    fi_df = fi_df.sort_values("Importance", ascending=True)
-
-                    fi_fig = px.bar(
-                        fi_df,
-                        x="Importance",
-                        y="Feature",
-                        orientation="h",
-                        title="Top 10 AI Features",
-                    )
-                    fi_fig.update_layout(
-                        height=250,
-                        margin=dict(l=20, r=20, t=30, b=20),
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        plot_bgcolor="rgba(0,0,0,0)",
-                        font=dict(color="#e0e0e0"),
-                        xaxis=dict(
-                            showgrid=True,
-                            gridcolor="rgba(100,100,100,0.2)",
-                            zeroline=False,
+                    # Update layout
+                    fig.update_layout(
+                        title=dict(
+                            text=f"<b>{ticker} AI & TECHNICAL ANALYSIS</b>",
+                            font=dict(family="Orbitron", size=20, color="#14f5ee"),
                         ),
-                        yaxis=dict(showgrid=False),
+                        xaxis_rangeslider_visible=False,
+                        height=900,
+                        template="plotly_dark",
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="rgba(15, 15, 30, 0.6)",
+                        font=dict(family="Rajdhani", color="#e0e0e0", size=14),
+                        hovermode="x unified",
+                        margin=dict(l=20, r=20, t=60, b=20),
                     )
-                    fi_fig.update_traces(marker_color="#686de0")
-                    st.plotly_chart(fi_fig, use_container_width=True)
-                else:
-                    st.write("Not enough data to calculate feature importances.")
 
-            st.markdown("---")
+                    # Hide axes for VPVR
+                    fig.update_xaxes(
+                        showticklabels=False,
+                        showgrid=False,
+                        zeroline=False,
+                        row=1,
+                        col=2,
+                    )
+                    fig.update_yaxes(
+                        showticklabels=False,
+                        showgrid=False,
+                        zeroline=False,
+                        row=1,
+                        col=2,
+                    )
 
-            # Additional info
+                    st.plotly_chart(fig, use_container_width=True)
 
-            col1, col2, col3, col4 = st.columns(4)
-            with col1:
-                st.subheader("Signal Logic")
-                st.write(f"**Final Action:** {r['Action']}")
-                st.write(
-                    f"**Ichimoku Bullish:** {'Yes' if r.get('Ichimoku_Bullish') else 'No'}"
-                )
-                if r.get("Stop_Loss") and not math.isnan(r.get("Stop_Loss")):
-                    st.write(f"**Stop Loss:** ${r['Stop_Loss']:.2f}")
-                if r.get("Take_Profit") and not math.isnan(r.get("Take_Profit")):
-                    st.write(f"**Take Profit:** ${r['Take_Profit']:.2f}")
+                    # Additional info
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.subheader("Signal Logic")
+                        st.write(f"**Final Action:** {r['Action']}")
+                        st.write(
+                            f"**Ichimoku Bullish:** {'Yes' if r.get('Ichimoku_Bullish') else 'No'}"
+                        )
+                        if r.get("Stop_Loss") and not math.isnan(r.get("Stop_Loss")):
+                            st.write(f"**Stop Loss:** ${r['Stop_Loss']:.2f}")
+                        if r.get("Take_Profit") and not math.isnan(
+                            r.get("Take_Profit")
+                        ):
+                            st.write(f"**Take Profit:** ${r['Take_Profit']:.2f}")
 
-            with col2:
-                st.subheader("Market Dynamics")
-                st.write(f"**Regime:** {r.get('Market_Regime', 'N/A')}")
-                st.write(f"**Pattern:** {r.get('Pattern', 'None')}")
-                st.write(
-                    f"**OBV Bull Div:** {'Yes' if r.get('OBV_Bullish_Div') else 'No'}"
-                )
-                st.write(
-                    f"**StochRSI Cross:** {'Bullish' if r.get('Stoch_Bullish_Cross') else ('Bearish' if r.get('Stoch_Bearish_Cross') else 'None')}"
-                )
+                    with col2:
+                        st.subheader("Market Dynamics")
+                        st.write(f"**Regime:** {r.get('Market_Regime', 'N/A')}")
+                        st.write(f"**Pattern:** {r.get('Pattern', 'None')}")
+                        st.write(
+                            f"**OBV Bull Div:** {'Yes' if r.get('OBV_Bullish_Div') else 'No'}"
+                        )
+                        st.write(
+                            f"**StochRSI Cross:** {'Bullish' if r.get('Stoch_Bullish_Cross') else ('Bearish' if r.get('Stoch_Bearish_Cross') else 'None')}"
+                        )
 
-            with col3:
-                st.subheader("Key Levels (VPVR/Fib)")
-                st.write(f"**Volume POC:** ${r.get('VPVR_POC', 0):.2f}")
-                st.write(f"**Fib High (0):** ${r.get('Fib_0', 0):.2f}")
-                st.write(f"**Fib Mid (0.5):** ${r.get('Fib_0.5', 0):.2f}")
-                st.write(f"**VWAP:** ${r.get('VWAP', 0):.2f}")
-                st.write(f"**Fib Low (1):** ${r.get('Fib_1', 0):.2f}")
+                    with col3:
+                        st.subheader("Key Levels (VPVR/Fib)")
+                        st.write(f"**Volume POC:** ${r.get('VPVR_POC', 0):.2f}")
+                        st.write(f"**Fib High (0):** ${r.get('Fib_0', 0):.2f}")
+                        st.write(f"**Fib Mid (0.5):** ${r.get('Fib_0.5', 0):.2f}")
+                        st.write(f"**VWAP:** ${r.get('VWAP', 0):.2f}")
+                        st.write(f"**Fib Low (1):** ${r.get('Fib_1', 0):.2f}")
 
-            if run_backtest and "backtest" in r:
-                st.markdown("---")
-                st.markdown(
-                    "<h3 style='text-align: center; color: #14f5ee; font-family: Orbitron;'>MONTE CARLO BACKTEST RESULTS</h3>",
-                    unsafe_allow_html=True,
-                )
-
-                with col4:
-                    st.subheader("Risk Profile")
-                    bt = r["backtest"]
-                    st.write(f"**Historical Return:** {bt.get('Return %', 0):.2f}%")
-                    st.write(f"**Win Rate:** {bt.get('Win Rate %', 0):.2f}%")
-                    st.write(
-                        f"**MC Median Return:** <span style='color:#14f5ee'>{bt.get('MC Median Return %', 0):.2f}%</span>",
+                with sub_tabs[1]:
+                    # --- AI DASHBOARD ---
+                    st.markdown(
+                        "<h3 style='text-align: center; color: #14f5ee; font-family: Orbitron;'>AI PREDICTIVE ENGINE</h3>",
                         unsafe_allow_html=True,
                     )
-                    risk_color = (
-                        "#ff00d4"
-                        if bt.get("Risk of Ruin %", 0) > 10
-                        else "#f9ca24" if bt.get("Risk of Ruin %", 0) > 5 else "#14f5ee"
-                    )
-                    st.write(
-                        f"**Risk of Ruin (>20% DD):** <span style='color:{risk_color}'>{bt.get('Risk of Ruin %', 0):.2f}%</span>",
-                        unsafe_allow_html=True,
-                    )
-                    st.write(f"**Sharpe Ratio:** {bt.get('Sharpe Ratio', 0):.2f}")
-                    st.write(f"**Sortino Ratio:** {bt.get('Sortino Ratio', 0):.2f}")
-                    st.write(f"**Profit Factor:** {bt.get('Profit Factor', 0):.2f}")
 
-                # V3 & V5: Plotly line chart for Equity Curve and Interactive Trade Log
-                eq_col, log_col = st.columns([2, 1])
+                    ai_col1, ai_col2 = st.columns([1, 2])
 
-                with eq_col:
-                    equity_curve = bt.get("Equity Curve", [])
-                    if equity_curve:
-                        eq_df = pd.DataFrame(equity_curve)
-                        eq_fig = px.line(
-                            eq_df, x="Date", y="Equity", title="Equity Curve"
+                    with ai_col1:
+                        # V2: Plotly Gauge chart for AI Confidence
+                        conf = r.get("AI_Confidence", 50.0)
+                        cv_acc = r.get("AI_CV_Accuracy", 0.0)
+
+                        gauge_fig = go.Figure(
+                            go.Indicator(
+                                mode="gauge+number",
+                                value=conf,
+                                domain={"x": [0, 1], "y": [0, 1]},
+                                title={
+                                    "text": "Confidence (Bullish)",
+                                    "font": {"color": "#14f5ee"},
+                                },
+                                gauge={
+                                    "axis": {
+                                        "range": [0, 100],
+                                        "tickwidth": 1,
+                                        "tickcolor": "#e0e0e0",
+                                    },
+                                    "bar": {
+                                        "color": "#14f5ee" if conf >= 50 else "#ff00d4"
+                                    },
+                                    "bgcolor": "rgba(0,0,0,0)",
+                                    "borderwidth": 2,
+                                    "bordercolor": "#686de0",
+                                    "steps": [
+                                        {
+                                            "range": [0, 40],
+                                            "color": "rgba(255, 0, 212, 0.2)",
+                                        },
+                                        {
+                                            "range": [40, 60],
+                                            "color": "rgba(249, 202, 36, 0.2)",
+                                        },
+                                        {
+                                            "range": [60, 100],
+                                            "color": "rgba(20, 245, 238, 0.2)",
+                                        },
+                                    ],
+                                    "threshold": {
+                                        "line": {"color": "red", "width": 4},
+                                        "thickness": 0.75,
+                                        "value": 50,
+                                    },
+                                },
+                            )
                         )
-                        eq_fig.update_traces(
-                            line=dict(color="#ff00d4", width=2),
-                            hovertemplate="<b>Date</b>: %{x}<br><b>Equity</b>: $%{y:.2f}<extra></extra>",
-                        )
-                        eq_fig.update_layout(
-                            height=350,
-                            margin=dict(l=20, r=20, t=40, b=20),
+                        gauge_fig.update_layout(
+                            height=300,
+                            margin=dict(l=20, r=20, t=30, b=20),
                             paper_bgcolor="rgba(0,0,0,0)",
-                            plot_bgcolor="rgba(15,15,30,0.6)",
                             font=dict(color="#e0e0e0"),
-                            xaxis=dict(
-                                showgrid=True,
-                                gridcolor="rgba(100,100,100,0.2)",
-                                zeroline=False,
-                            ),
-                            yaxis=dict(
-                                showgrid=True,
-                                gridcolor="rgba(100,100,100,0.2)",
-                                zeroline=False,
-                            ),
+                        )
+                        st.plotly_chart(gauge_fig, use_container_width=True)
+                        st.markdown(
+                            f"<p style='text-align:center;'>CV Accuracy: {cv_acc:.1f}%</p>",
+                            unsafe_allow_html=True,
                         )
 
-                        st.plotly_chart(eq_fig, use_container_width=True)
+                    with ai_col2:
+                        # V1: Plotly horizontal bar chart for AI Feature Importances
+                        fi = r.get("AI_Feature_Importances", {})
+                        if fi:
+                            # Take top 10 features
+                            top_fi = dict(list(fi.items())[:10])
+                            fi_df = pd.DataFrame(
+                                {
+                                    "Feature": list(top_fi.keys()),
+                                    "Importance": list(top_fi.values()),
+                                }
+                            )
+                            fi_df = fi_df.sort_values("Importance", ascending=True)
 
-                with log_col:
-                    trade_log = bt.get("Trade Log", [])
-                    if trade_log:
-                        st.write("**Trade Log**")
-                        tl_df = pd.DataFrame(trade_log)
-                        # UX Improvement: Format currency and percentages properly in dataframe
-                        styled_df = tl_df.style.format(
-                            {
-                                "Entry Price": "${:,.2f}",
-                                "Exit Price": "${:,.2f}",
-                                "Return %": "{:.2f}%",
-                            }
+                            fi_fig = px.bar(
+                                fi_df,
+                                x="Importance",
+                                y="Feature",
+                                orientation="h",
+                                title="Top 10 AI Features",
+                            )
+                            fi_fig.update_layout(
+                                height=350,
+                                margin=dict(l=20, r=20, t=30, b=20),
+                                paper_bgcolor="rgba(0,0,0,0)",
+                                plot_bgcolor="rgba(0,0,0,0)",
+                                font=dict(color="#e0e0e0"),
+                                xaxis=dict(
+                                    showgrid=True,
+                                    gridcolor="rgba(100,100,100,0.2)",
+                                    zeroline=False,
+                                ),
+                                yaxis=dict(showgrid=False),
+                            )
+                            fi_fig.update_traces(marker_color="#686de0")
+                            st.plotly_chart(fi_fig, use_container_width=True)
+                        else:
+                            st.write(
+                                "Not enough data to calculate feature importances."
+                            )
+
+                with sub_tabs[2]:
+                    if run_backtest and "backtest" in r:
+                        st.markdown(
+                            "<h3 style='text-align: center; color: #14f5ee; font-family: Orbitron;'>MONTE CARLO BACKTEST RESULTS</h3>",
+                            unsafe_allow_html=True,
                         )
-                        st.dataframe(
-                            styled_df,
-                            height=350,
-                            use_container_width=True,
-                            hide_index=True,
-                        )
+
+                        bt = r["backtest"]
+
+                        # Risk Profile Summary
+                        rp_col1, rp_col2, rp_col3, rp_col4 = st.columns(4)
+                        with rp_col1:
+                            st.metric(
+                                "Historical Return", f"{bt.get('Return %', 0):.2f}%"
+                            )
+                            st.metric("Win Rate", f"{bt.get('Win Rate %', 0):.2f}%")
+                        with rp_col2:
+                            st.metric(
+                                "MC Median Return",
+                                f"{bt.get('MC Median Return %', 0):.2f}%",
+                            )
+                            risk = bt.get("Risk of Ruin %", 0)
+                            st.metric("Risk of Ruin (>20% DD)", f"{risk:.2f}%")
+                        with rp_col3:
+                            st.metric(
+                                "Sharpe Ratio", f"{bt.get('Sharpe Ratio', 0):.2f}"
+                            )
+                            st.metric(
+                                "Sortino Ratio", f"{bt.get('Sortino Ratio', 0):.2f}"
+                            )
+                        with rp_col4:
+                            st.metric(
+                                "Profit Factor", f"{bt.get('Profit Factor', 0):.2f}"
+                            )
+                            st.metric("Total Trades", f"{bt.get('Total Trades', 0)}")
+
+                        st.markdown("---")
+
+                        eq_col, dist_col = st.columns([2, 1])
+
+                        with eq_col:
+                            equity_curve = bt.get("Equity Curve", [])
+                            if equity_curve:
+                                eq_df = pd.DataFrame(equity_curve)
+                                eq_fig = px.area(
+                                    eq_df,
+                                    x="Date",
+                                    y="Equity",
+                                    title="Equity Curve Simulation",
+                                )
+                                eq_fig.update_traces(
+                                    line=dict(color="#ff00d4", width=2),
+                                    fillcolor="rgba(255, 0, 212, 0.2)",
+                                    hovertemplate="<b>Date</b>: %{x}<br><b>Equity</b>: $%{y:.2f}<extra></extra>",
+                                )
+                                eq_fig.update_layout(
+                                    height=350,
+                                    margin=dict(l=20, r=20, t=40, b=20),
+                                    paper_bgcolor="rgba(0,0,0,0)",
+                                    plot_bgcolor="rgba(15,15,30,0.6)",
+                                    font=dict(color="#e0e0e0"),
+                                    xaxis=dict(
+                                        showgrid=True,
+                                        gridcolor="rgba(100,100,100,0.2)",
+                                        zeroline=False,
+                                    ),
+                                    yaxis=dict(
+                                        showgrid=True,
+                                        gridcolor="rgba(100,100,100,0.2)",
+                                        zeroline=False,
+                                    ),
+                                )
+                                st.plotly_chart(eq_fig, use_container_width=True)
+
+                        with dist_col:
+                            trade_log = bt.get("Trade Log", [])
+                            if trade_log:
+                                tl_df = pd.DataFrame(trade_log)
+                                if "Return %" in tl_df.columns:
+                                    dist_fig = px.histogram(
+                                        tl_df,
+                                        x="Return %",
+                                        nbins=20,
+                                        title="Trade Returns Distribution",
+                                    )
+                                    dist_fig.update_traces(marker_color="#14f5ee")
+                                    dist_fig.update_layout(
+                                        height=350,
+                                        margin=dict(l=20, r=20, t=40, b=20),
+                                        paper_bgcolor="rgba(0,0,0,0)",
+                                        plot_bgcolor="rgba(15,15,30,0.6)",
+                                        font=dict(color="#e0e0e0"),
+                                    )
+                                    st.plotly_chart(dist_fig, use_container_width=True)
+                                else:
+                                    st.write("Distribution not available.")
+                            else:
+                                st.write("No trades for distribution.")
+
+                        st.markdown("---")
+
+                        trade_log = bt.get("Trade Log", [])
+                        if trade_log:
+                            st.write("**Detailed Trade Log**")
+                            tl_df = pd.DataFrame(trade_log)
+
+                            # Add CSV Download Button
+                            csv = tl_df.to_csv(index=False).encode("utf-8")
+                            st.download_button(
+                                label="Download Trade Log as CSV",
+                                data=csv,
+                                file_name=f"{ticker}_trade_log.csv",
+                                mime="text/csv",
+                            )
+
+                            styled_df = tl_df.style.format(
+                                {
+                                    "Entry Price": "${:,.2f}",
+                                    "Exit Price": "${:,.2f}",
+                                    "Return %": "{:.2f}%",
+                                }
+                            )
+                            st.dataframe(
+                                styled_df,
+                                height=350,
+                                use_container_width=True,
+                                hide_index=True,
+                            )
+                        else:
+                            st.write("No trades executed.")
                     else:
-                        st.write("No trades executed.")
+                        st.info(
+                            "Backtest not run or no results available for this ticker."
+                        )
