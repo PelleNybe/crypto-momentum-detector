@@ -341,3 +341,16 @@ def generate_table(results, args):
 
 if __name__ == "__main__":
     main()
+
+
+# --- Vercel Serverless Function Compatibility ---
+# Vercel's Python runtime automatically detects app.py or main.py and expects a WSGI/ASGI application.
+# This dummy application is provided to allow the Vercel build process to pass
+# without throwing the "none export a top-level app, application, or handler variable" error.
+def app(environ, start_response):
+    start_response("200 OK", [("Content-Type", "text/plain")])
+    return [b"CLI applications cannot be run natively on Vercel Serverless Functions."]
+
+
+application = app
+handler = app
