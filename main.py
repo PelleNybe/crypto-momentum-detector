@@ -96,7 +96,7 @@ def process_ticker(ticker, period, interval, use_mtf, run_backtest):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="⚡ NeonPulse CLI: AI Crypto Momentum")
+    parser = argparse.ArgumentParser(description=" NeonPulse CLI: AI Crypto Momentum")
     parser.add_argument(
         "--tickers",
         nargs="+",
@@ -141,7 +141,7 @@ def main():
 
     console.print(
         Panel.fit(
-            "[bold cyan]⚡ NeonPulse AI Crypto Terminal ⚡[/bold cyan]\n"
+            "[bold cyan] NeonPulse AI Crypto Terminal [/bold cyan]\n"
             "[dim]Neural Network + Momentum Scanning + Risk Profiling[/dim]\n"
             "[italic]Developed by Pelle Nyberg (Corax CoLAB)[/italic]",
             border_style="cyan",
@@ -152,7 +152,7 @@ def main():
     layout.split(Layout(name="header", size=5), Layout(name="body"))
     layout["header"].update(
         Panel.fit(
-            "[bold cyan]⚡ NeonPulse AI Crypto Terminal ⚡[/bold cyan]\n"
+            "[bold cyan] NeonPulse AI Crypto Terminal [/bold cyan]\n"
             "[dim]Neural Network + Momentum Scanning + Risk Profiling[/dim]\n"
             "[italic]Developed by Pelle Nyberg (Corax CoLAB)[/italic]",
             border_style="cyan",
@@ -341,3 +341,8 @@ def generate_table(results, args):
 
 if __name__ == "__main__":
     main()
+
+# Vercel dummy WSGI app
+app = application = lambda env, start_response: start_response(
+    "200 OK", [("Content-Type", "text/plain")]
+) or [b"NeonPulse API OK"]
