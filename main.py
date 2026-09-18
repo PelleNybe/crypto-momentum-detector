@@ -87,9 +87,9 @@ def process_ticker(ticker, period, interval, use_mtf, run_backtest, run_wfo=Fals
 
     result = {"ticker": ticker, **latest_signal}
 
-
     if run_wfo:
         from crypto_momentum.optimizer import WalkForwardOptimizer
+
         try:
             optimizer = WalkForwardOptimizer(data=generator.generate_signals())
             wfo_results = optimizer.run_optimization()
