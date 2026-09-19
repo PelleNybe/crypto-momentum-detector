@@ -277,6 +277,7 @@ def process_ticker_cached(
 
         # Extract VPVR profile directly from the instance to avoid recalculating
         vpvr_profile = indicators.vpvr_profile
+        rolling_heatmap = indicators.rolling_vpvr_heatmap
 
         generator = SignalGenerator(
             data=df_with_indicators,
@@ -297,6 +298,7 @@ def process_ticker_cached(
             "ticker": ticker,
             "df": df_with_indicators,
             "vpvr_profile": vpvr_profile,
+            "rolling_heatmap": rolling_heatmap,
             **latest_signal,
         }
 
@@ -304,11 +306,11 @@ def process_ticker_cached(
             from crypto_momentum.optimizer import WalkForwardOptimizer
 
             try:
-                optimizer = WalkForwardOptimizer(data=df_with_signals)
+                optimizer = WalkForwardOptimizer(data=generator.generate_signals())
                 wfo_results = optimizer.run_optimization()
-                result_data["wfo"] = wfo_results
+                result["wfo"] = wfo_results
             except Exception as e:
-                result_data["error"] = f"WFO Error: {str(e)}"
+                result["error"] = f"WFO Error: {str(e)}"
 
         if run_backtest:
             df_signals = generator.generate_signals()
@@ -485,6 +487,25 @@ if analyze_button:
                             [{"type": "xy", "colspan": 2}, None],
                         ],
                     )
+
+                    # --- Rolling Liquidity Heatmap ---
+                    heatmap_df = r.get("rolling_heatmap", pd.DataFrame())
+                    if not heatmap_df.empty:
+                        # Add a 2D Heatmap overlay behind the candlesticks
+                        fig.add_trace(
+                            go.Heatmap(
+                                z=heatmap_df.values.T,  # Transpose to map price to Y, time to X
+                                x=heatmap_df.index,
+                                y=heatmap_df.columns,
+                                colorscale="Inferno",
+                                opacity=0.3,  # Make it semi-transparent so candles are visible
+                                showscale=False,
+                                hoverinfo="skip",  # Prevent hover clutter
+                                name="Liquidity Heatmap",
+                            ),
+                            row=1,
+                            col=1,
+                        )
 
                     # --- Candlestick chart ---
                     fig.add_trace(
@@ -991,19 +1012,120 @@ if analyze_button:
                             "Backtest not run or no results available for this ticker."
                         )
 
+                with sub_tabs[3]:
+                    if run_wfo and "wfo" in r:
+                        st.markdown(
+                            "<h3 style='text-align: center; color: #14f5ee; font-family: Orbitron;'>WALK-FORWARD OPTIMIZATION (WFO)</h3>",
+                            unsafe_allow_html=True,
+                        )
 
-# --- Vercel Serverless Function Compatibility ---
-# Vercel's Python runtime automatically detects app.py or main.py and expects a WSGI/ASGI application.
-# Since this is a Streamlit app (which requires WebSockets and cannot run on Vercel Serverless),
-# we provide a dummy application here simply to allow the Vercel build process to pass
-# without throwing the "none export a top-level app, application, or handler variable" error.
-# For actual deployment, Streamlit Community Cloud or a standard containerized hosting service is recommended.
-def app(environ, start_response):
-    start_response("200 OK", [("Content-Type", "text/plain")])
-    return [
-        b"Streamlit apps cannot be run natively on Vercel Serverless Functions. Please deploy to Streamlit Community Cloud or use containerized hosting."
-    ]
+                        wfo = r["wfo"]
+
+                        # Risk Profile Summary
+                        rp_col1, rp_col2, rp_col3, rp_col4 = st.columns(4)
+                        with rp_col1:
+                            st.metric(
+                                "OOS Return", f"{wfo.get('OOS Return %', 0):.2f}%"
+                            )
+                            st.metric(
+                                "OOS Win Rate", f"{wfo.get('OOS Win Rate %', 0):.2f}%"
+                            )
+                        with rp_col2:
+                            st.metric(
+                                "Final Balance", f"${wfo.get('Final Balance', 0):,.2f}"
+                            )
+                            st.metric("Total Trades", f"{wfo.get('Total Trades', 0)}")
+                        with rp_col3:
+                            st.metric(
+                                "OOS Sharpe Ratio",
+                                f"{wfo.get('OOS Sharpe Ratio', 0):.2f}",
+                            )
+                        with rp_col4:
+                            st.metric(
+                                "OOS Max Drawdown",
+                                f"{wfo.get('OOS Max Drawdown %', 0):.2f}%",
+                            )
+                            st.metric(
+                                "OOS Profit Factor",
+                                f"{wfo.get('OOS Profit Factor', 0):.2f}",
+                            )
+
+                        st.markdown("---")
+
+                        eq_col, dist_col = st.columns([2, 1])
+
+                        with eq_col:
+                            oos_equity = wfo.get("OOS Equity Curve", [])
+                            if oos_equity:
+                                eq_df = pd.DataFrame(oos_equity)
+                                eq_fig = px.area(
+                                    eq_df,
+                                    x="Date",
+                                    y="Equity",
+                                    title="Out-of-Sample Equity Curve",
+                                )
+                                eq_fig.update_traces(
+                                    line=dict(color="#00ff00", width=2),
+                                    fillcolor="rgba(0, 255, 0, 0.2)",
+                                    hovertemplate="<b>Date</b>: %{x}<br><b>Equity</b>: $%{y:.2f}<extra></extra>",
+                                )
+                                eq_fig.update_layout(
+                                    height=350,
+                                    margin=dict(l=20, r=20, t=40, b=20),
+                                    paper_bgcolor="rgba(0,0,0,0)",
+                                    plot_bgcolor="rgba(15,15,30,0.6)",
+                                    font=dict(color="#e0e0e0"),
+                                )
+                                st.plotly_chart(eq_fig, use_container_width=True)
+
+                        with dist_col:
+                            window_results = wfo.get("Window Results", [])
+                            if window_results:
+                                wr_df = pd.DataFrame(window_results)
+                                wr_df["Window Label"] = wr_df["Window"].astype(str)
+                                dist_fig = px.bar(
+                                    wr_df,
+                                    x="Window Label",
+                                    y="OOS Return %",
+                                    title="OOS Return per Window",
+                                    color="OOS Return %",
+                                    color_continuous_scale=px.colors.diverging.RdYlGn,
+                                )
+                                dist_fig.update_layout(
+                                    height=350,
+                                    margin=dict(l=20, r=20, t=40, b=20),
+                                    paper_bgcolor="rgba(0,0,0,0)",
+                                    plot_bgcolor="rgba(15,15,30,0.6)",
+                                    font=dict(color="#e0e0e0"),
+                                )
+                                st.plotly_chart(dist_fig, use_container_width=True)
+
+                        if window_results:
+                            st.write("**Window-by-Window Results & Best Parameters**")
+                            # Format best params for display
+                            display_df = wr_df.copy()
+                            display_df["Best Params"] = display_df["Best Params"].apply(
+                                lambda x: str(x)
+                            )
+                            st.dataframe(
+                                display_df[
+                                    [
+                                        "Window",
+                                        "Start Date",
+                                        "End Date",
+                                        "OOS Return %",
+                                        "OOS Win Rate %",
+                                        "Best Params",
+                                    ]
+                                ],
+                                use_container_width=True,
+                            )
+
+                    else:
+                        st.info("WFO Analysis not run or no results available.")
 
 
-application = app
-handler = app
+# Vercel dummy WSGI app
+app = application = lambda env, start_response: start_response(
+    "200 OK", [("Content-Type", "text/plain")]
+) or [b"NeonPulse UI OK"]

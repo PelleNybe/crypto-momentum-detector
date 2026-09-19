@@ -104,15 +104,23 @@ class MarketRegimeDetector:
             label_mapping = self._label_regimes(feature_df)
             feature_df["AI_Regime"] = feature_df["Cluster"].map(label_mapping)
 
-            # Realign with original dataframe index
-            # We want to fill the initial rows that were dropped by rolling windows with the first known regime
-            self.data["AI_Regime"] = feature_df["AI_Regime"]
-            self.data["AI_Regime"] = self.data["AI_Regime"].bfill().fillna("Unknown")
+            # Realign with original dataframe index bypassing any pandas index alignment
+            ai_regime_list = ["Unknown"] * len(self.data)
+            ai_regime_encoded_list = [-1] * len(self.data)
 
-            self.data["AI_Regime_Encoded"] = feature_df["Cluster"]
-            self.data["AI_Regime_Encoded"] = (
-                self.data["AI_Regime_Encoded"].bfill().fillna(-1)
-            )
+            # Map back using positional index from the tail
+            start_idx = len(self.data) - len(feature_df)
+
+            for i in range(len(feature_df)):
+                ai_regime_list[start_idx + i] = feature_df["AI_Regime"].iloc[i]
+                ai_regime_encoded_list[start_idx + i] = feature_df["Cluster"].iloc[i]
+
+            self.data["AI_Regime"] = ai_regime_list
+            self.data["AI_Regime_Encoded"] = ai_regime_encoded_list
+
+# Use forward fill for the Unknowns at the start using pd series methods safely for pandas 2.3+
+            self.data["AI_Regime"] = self.data["AI_Regime"].replace("Unknown", np.nan).bfill().fillna("Unknown")
+            self.data["AI_Regime_Encoded"] = self.data["AI_Regime_Encoded"].replace(-1, np.nan).bfill().fillna(-1)
 
         except Exception as e:
             logger.error(f"Error in Market Regime Detection: {e}")

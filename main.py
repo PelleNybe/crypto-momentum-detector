@@ -351,6 +351,19 @@ def generate_table(results, args):
 
             row.extend([mc_fmt, ruin_fmt, sharpe_fmt])
 
+
+        if args.wfo and "wfo" in res:
+            wfo_res = res["wfo"]
+            row.extend(
+                [
+                    f"{wfo_res.get('OOS Return %', 0):.2f}%",
+                    f"{wfo_res.get('OOS Win Rate %', 0):.2f}%",
+                    f"{wfo_res.get('OOS Sharpe Ratio', 0):.2f}",
+                ]
+            )
+        elif args.wfo:
+            row.extend(["N/A", "N/A", "N/A"])
+
         table.add_row(*row)
     return table
 
