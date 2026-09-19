@@ -1,5 +1,6 @@
 import pandas as pd
 from ta.momentum import RSIIndicator, StochRSIIndicator
+from crypto_momentum.regime_detector import MarketRegimeDetector
 from ta.trend import MACD, SMAIndicator, EMAIndicator, IchimokuIndicator, ADXIndicator
 from ta.volatility import BollingerBands, AverageTrueRange
 from ta.volume import OnBalanceVolumeIndicator, VolumeWeightedAveragePrice
@@ -220,10 +221,25 @@ class MomentumIndicators:
         df["DI_Plus"] = adx.adx_pos()
         df["DI_Minus"] = adx.adx_neg()
 
+        # Static ADX Regime
         df["Market_Regime"] = "Ranging"
         df.loc[(df["ADX"] > 25) & (df["DI_Plus"] > df["DI_Minus"]), "Market_Regime"] = (
             "Trending Bullish"
         )
+        df.loc[(df["ADX"] > 25) & (df["DI_Minus"] > df["DI_Plus"]), "Market_Regime"] = (
+            "Trending Bearish"
+        )
+
+        # New Unsupervised AI Regime
+        regime_detector = MarketRegimeDetector(data=df)
+        df_with_regime = regime_detector.detect_regimes()
+        if "AI_Regime" in df_with_regime.columns:
+            df["AI_Regime"] = df_with_regime["AI_Regime"]
+            df["AI_Regime_Encoded"] = df_with_regime["AI_Regime_Encoded"]
+        else:
+            df["AI_Regime"] = "Unknown"
+            df["AI_Regime_Encoded"] = -1
+
         df.loc[(df["ADX"] > 25) & (df["DI_Minus"] > df["DI_Plus"]), "Market_Regime"] = (
             "Trending Bearish"
         )
