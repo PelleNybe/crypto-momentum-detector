@@ -179,6 +179,11 @@ with st.sidebar:
         value=True,
         help="Run historical simulation with 1000 iteration Monte Carlo risk analysis.",
     )
+    run_wfo = st.checkbox(
+        "Enable Walk-Forward Optimizer (WFO)",
+        value=False,
+        help="Run dynamic rolling optimization on out-of-sample data.",
+    )
 
     with st.expander(" Signal Config"):
         rsi_buy_min = st.slider("RSI Buy Min", 10, 50, 40)
@@ -234,6 +239,7 @@ def process_ticker_cached(
     interval,
     use_mtf,
     run_backtest,
+    run_wfo,
     rsi_buy_min,
     rsi_buy_max,
     rsi_sell_min,
@@ -721,7 +727,9 @@ if analyze_button:
 
                     with col2:
                         st.subheader("Market Dynamics")
-                        st.write(f"**Regime:** {r.get('Market_Regime', 'N/A')}")
+                        st.write(
+                            f"**Regime:** {r.get('AI_Regime', r.get('Market_Regime', 'N/A'))}"
+                        )
                         st.write(f"**Pattern:** {r.get('Pattern', 'None')}")
                         st.write(
                             f"**OBV Bull Div:** {'Yes' if r.get('OBV_Bullish_Div') else 'No'}"

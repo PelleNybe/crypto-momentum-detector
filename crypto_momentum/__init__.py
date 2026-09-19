@@ -17,6 +17,7 @@ from .backtester import Backtester
 from .ai_predictor import AIPredictor
 from .mtf_utils import get_htf_interval, get_htf_period
 from .optimizer import WalkForwardOptimizer
+from .regime_detector import MarketRegimeDetector
 
 __all__ = [
     "DataFetcher",

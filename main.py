@@ -303,7 +303,7 @@ def generate_table(results, args):
             f"{res.get('AI_CV_Accuracy', 0.0):.1f}%",
             format_color(res["RSI"], 30, 70),
             f"${res.get('VPVR_POC', 0):.2f}",
-            res.get("Market_Regime", "N/A"),
+            res.get("AI_Regime", res.get("Market_Regime", "N/A")),
             res.get("Pattern", "None"),
             (
                 "[green]Bullish[/green]"
