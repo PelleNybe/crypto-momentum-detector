@@ -77,3 +77,11 @@
 3. Enhanced UI/UX by exposing 1-period (24h) percentage changes (`Change_24h`) in `crypto_momentum/signal_generator.py` and implementing it as visual delta indicators on Streamlit's `st.metric` cards.
 4. Added Custom CSS animations in `app.py` for hover effects (`transform: translateY`) on metrics and buttons, providing interactive visual feedback.
 5. Improved UI user feedback loops by embedding dynamic text in `st.progress` during concurrent fetching, and injecting processing time metrics directly into final `st.toast` alerts.
+
+## 2026-09-17 - [System-Wide QA Audit & Standardization]
+**Learning:** The application lacked dummy WSGI application variables causing Vercel deployment issues, some emojis broke the English-only strictly professional UI rule, and UI screenshots needed placeholders for updates.
+**Action:** Addressed WSGI serverless build requirements by injecting a lambda dummy function mapped to `app = application` in `app.py` and `main.py`. Cleaned up non-ascii UI emojis, checked that mock data was strictly limited to unit tests (), and updated `README.md` documentation to meet strict English/professional branding requirements including adding [INSERT LATEST GUI SCREENSHOT HERE] placeholders.
+
+## 2026-09-17 - [System-Wide QA Audit & Standardization]
+**Learning:** The application lacked dummy WSGI application variables causing Vercel deployment issues, some emojis broke the English-only strictly professional UI rule, and UI screenshots needed placeholders for updates.
+**Action:** Addressed WSGI serverless build requirements by injecting a lambda dummy function mapped to `app = application` in `app.py` and `main.py`. Cleaned up non-ascii UI emojis, checked that mock data was strictly limited to unit tests, and updated `README.md` documentation to meet strict English/professional branding requirements including adding [INSERT LATEST GUI SCREENSHOT HERE] placeholders.

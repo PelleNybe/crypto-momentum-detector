@@ -51,7 +51,7 @@ def format_ai_confidence(val):
     return f"[bold yellow]{val:.1f}%[/bold yellow]"
 
 
-def process_ticker(ticker, period, interval, use_mtf, run_backtest):
+def process_ticker(ticker, period, interval, use_mtf, run_backtest, run_wfo=False):
     import concurrent.futures
 
     fetcher = DataFetcher(ticker_symbol=ticker)
@@ -87,6 +87,16 @@ def process_ticker(ticker, period, interval, use_mtf, run_backtest):
 
     result = {"ticker": ticker, **latest_signal}
 
+    if run_wfo:
+        from crypto_momentum.optimizer import WalkForwardOptimizer
+
+        try:
+            optimizer = WalkForwardOptimizer(data=generator.generate_signals())
+            wfo_results = optimizer.run_optimization()
+            result["wfo"] = wfo_results
+        except Exception as e:
+            result["error"] = f"WFO Error: {str(e)}"
+
     if run_backtest:
         df_signals = generator.generate_signals()
         backtester = Backtester(data=df_signals)
@@ -96,7 +106,7 @@ def process_ticker(ticker, period, interval, use_mtf, run_backtest):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="⚡ NeonPulse CLI: AI Crypto Momentum")
+    parser = argparse.ArgumentParser(description=" NeonPulse CLI: AI Crypto Momentum")
     parser.add_argument(
         "--tickers",
         nargs="+",
@@ -110,6 +120,9 @@ def main():
     )
     parser.add_argument(
         "--backtest", action="store_true", help="Run historical Monte Carlo backtest"
+    )
+    parser.add_argument(
+        "--wfo", action="store_true", help="Run Walk-Forward Optimization (WFO)"
     )
     parser.add_argument("--export", type=str, help="Export results to CSV (file path)")
     parser.add_argument(
@@ -141,7 +154,7 @@ def main():
 
     console.print(
         Panel.fit(
-            "[bold cyan]⚡ NeonPulse AI Crypto Terminal ⚡[/bold cyan]\n"
+            "[bold cyan] NeonPulse AI Crypto Terminal [/bold cyan]\n"
             "[dim]Neural Network + Momentum Scanning + Risk Profiling[/dim]\n"
             "[italic]Developed by Pelle Nyberg (Corax CoLAB)[/italic]",
             border_style="cyan",
@@ -152,7 +165,7 @@ def main():
     layout.split(Layout(name="header", size=5), Layout(name="body"))
     layout["header"].update(
         Panel.fit(
-            "[bold cyan]⚡ NeonPulse AI Crypto Terminal ⚡[/bold cyan]\n"
+            "[bold cyan] NeonPulse AI Crypto Terminal [/bold cyan]\n"
             "[dim]Neural Network + Momentum Scanning + Risk Profiling[/dim]\n"
             "[italic]Developed by Pelle Nyberg (Corax CoLAB)[/italic]",
             border_style="cyan",
@@ -171,6 +184,7 @@ def main():
                     args.interval,
                     args.use_mtf,
                     args.backtest,
+                    args.wfo,
                 ): t
                 for t in args.tickers
             }
@@ -237,6 +251,10 @@ def generate_table(results, args):
         table.add_column("MC Return", justify="right")
         table.add_column("Risk Ruin", justify="right")
         table.add_column("Sharpe", justify="right")
+    if args.wfo:
+        table.add_column("OOS Return", justify="right")
+        table.add_column("OOS Win %", justify="right")
+        table.add_column("OOS Sharpe", justify="right")
 
     for res in results:
         if "error" in res:
