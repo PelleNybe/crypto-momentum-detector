@@ -53,6 +53,7 @@ class AIPredictor:
             "Stoch_RSI_D",
             "VWAP",
             "Volume",
+            "AI_Regime_Encoded",
         ]
 
         # Check if features exist

@@ -51,7 +51,7 @@ def format_ai_confidence(val):
     return f"[bold yellow]{val:.1f}%[/bold yellow]"
 
 
-def process_ticker(ticker, period, interval, use_mtf, run_backtest):
+def process_ticker(ticker, period, interval, use_mtf, run_backtest, run_wfo=False):
     import concurrent.futures
 
     fetcher = DataFetcher(ticker_symbol=ticker)
@@ -85,7 +85,21 @@ def process_ticker(ticker, period, interval, use_mtf, run_backtest):
     # AI Confidence is already calculated inside get_latest_signal()
     # We do not need to retrain the predictor here.
 
-    result = {"ticker": ticker, **latest_signal}
+    result = {
+        "ticker": ticker,
+        "returns_series": df_with_indicators["Close"].pct_change().dropna(),
+        **latest_signal,
+    }
+
+    if run_wfo:
+        from crypto_momentum.optimizer import WalkForwardOptimizer
+
+        try:
+            optimizer = WalkForwardOptimizer(data=generator.generate_signals())
+            wfo_results = optimizer.run_optimization()
+            result["wfo"] = wfo_results
+        except Exception as e:
+            result["error"] = f"WFO Error: {str(e)}"
 
     if run_backtest:
         df_signals = generator.generate_signals()
@@ -110,6 +124,9 @@ def main():
     )
     parser.add_argument(
         "--backtest", action="store_true", help="Run historical Monte Carlo backtest"
+    )
+    parser.add_argument(
+        "--wfo", action="store_true", help="Run Walk-Forward Optimization (WFO)"
     )
     parser.add_argument("--export", type=str, help="Export results to CSV (file path)")
     parser.add_argument(
@@ -171,6 +188,7 @@ def main():
                     args.interval,
                     args.use_mtf,
                     args.backtest,
+                    args.wfo,
                 ): t
                 for t in args.tickers
             }
@@ -185,7 +203,44 @@ def main():
                 # Update layout body with current table
                 layout["body"].update(generate_table(results, args))
 
+    # --- Modern Portfolio Theory (MPT) Allocator ---
+    valid_results = [r for r in results if "error" not in r and "returns_series" in r]
+    if len(valid_results) > 1:
+        from crypto_momentum.portfolio_manager import MPTAllocator
+        import pandas as pd
+
+        returns_dict = {r["ticker"]: r["returns_series"] for r in valid_results}
+        returns_df = pd.DataFrame(returns_dict)
+
+        allocator = MPTAllocator(returns_data=returns_df)
+        mpt_res = allocator.optimize_portfolio()
+
+        if mpt_res and "weights" in mpt_res:
+            console.print("")
+            mpt_table = Table(
+                box=box.MINIMAL_DOUBLE_HEAD,
+                header_style="bold magenta",
+                title="Optimal Portfolio Allocation (MPT)",
+            )
+            mpt_table.add_column("Asset", justify="left", style="bold white")
+            mpt_table.add_column("Weight Allocation", justify="right")
+
+            for tkr, weight in mpt_res["weights"].items():
+                mpt_table.add_row(tkr, f"{weight * 100:.1f}%")
+
+            console.print(mpt_table)
+            console.print(
+                f"[dim]Expected Annual Return:[/dim] [green]{mpt_res['expected_return_annual'] * 100:.1f}%[/green]"
+            )
+            console.print(
+                f"[dim]Expected Annual Volatility:[/dim] {mpt_res['expected_volatility_annual'] * 100:.1f}%"
+            )
+            console.print(
+                f"[dim]Portfolio Sharpe Ratio:[/dim] {mpt_res['sharpe_ratio']:.2f}"
+            )
+
     if args.save_svg:
+
         console.save_svg("docs/assets/ui_default.svg", title="NeonPulse UI")
         console.print(
             f"[bold green]✓[/bold green] Saved terminal output to docs/assets/ui_default.svg"
@@ -237,6 +292,10 @@ def generate_table(results, args):
         table.add_column("MC Return", justify="right")
         table.add_column("Risk Ruin", justify="right")
         table.add_column("Sharpe", justify="right")
+    if args.wfo:
+        table.add_column("OOS Return", justify="right")
+        table.add_column("OOS Win %", justify="right")
+        table.add_column("OOS Sharpe", justify="right")
 
     for res in results:
         if "error" in res:
@@ -285,7 +344,7 @@ def generate_table(results, args):
             f"{res.get('AI_CV_Accuracy', 0.0):.1f}%",
             format_color(res["RSI"], 30, 70),
             f"${res.get('VPVR_POC', 0):.2f}",
-            res.get("Market_Regime", "N/A"),
+            res.get("AI_Regime", res.get("Market_Regime", "N/A")),
             res.get("Pattern", "None"),
             (
                 "[green]Bullish[/green]"
@@ -332,6 +391,18 @@ def generate_table(results, args):
             )
 
             row.extend([mc_fmt, ruin_fmt, sharpe_fmt])
+
+        if args.wfo and "wfo" in res:
+            wfo_res = res["wfo"]
+            row.extend(
+                [
+                    f"{wfo_res.get('OOS Return %', 0):.2f}%",
+                    f"{wfo_res.get('OOS Win Rate %', 0):.2f}%",
+                    f"{wfo_res.get('OOS Sharpe Ratio', 0):.2f}",
+                ]
+            )
+        elif args.wfo:
+            row.extend(["N/A", "N/A", "N/A"])
 
         table.add_row(*row)
     return table
