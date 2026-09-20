@@ -51,7 +51,9 @@ def format_ai_confidence(val):
     return f"[bold yellow]{val:.1f}%[/bold yellow]"
 
 
-def process_ticker(ticker, period, interval, use_mtf, run_backtest, run_wfo=False):
+def process_ticker(
+    ticker, period, interval, use_mtf, run_backtest, run_wfo=False, run_ga=False
+):
     import concurrent.futures
 
     fetcher = DataFetcher(ticker_symbol=ticker)
@@ -101,15 +103,17 @@ def process_ticker(ticker, period, interval, use_mtf, run_backtest, run_wfo=Fals
         except Exception as e:
             result["error"] = f"WFO Error: {str(e)}"
 
-    if run_wfo:
-        from crypto_momentum.optimizer import WalkForwardOptimizer
+    if run_ga:
+        from crypto_momentum.ga_optimizer import GeneticOptimizer
 
         try:
-            optimizer = WalkForwardOptimizer(data=generator.generate_signals())
-            wfo_results = optimizer.run_optimization()
-            result["wfo"] = wfo_results
+            optimizer = GeneticOptimizer(
+                data=df_with_indicators, generations=3, population_size=10
+            )  # Smaller for CLI
+            ga_results = optimizer.run_optimization()
+            result["ga"] = ga_results
         except Exception as e:
-            result["error"] = f"WFO Error: {str(e)}"
+            result["error"] = f"GA Error: {str(e)}"
 
     if run_backtest:
         df_signals = generator.generate_signals()
@@ -137,6 +141,9 @@ def main():
     )
     parser.add_argument(
         "--wfo", action="store_true", help="Run Walk-Forward Optimization (WFO)"
+    )
+    parser.add_argument(
+        "--ga", action="store_true", help="Run Genetic Algorithm Optimizer"
     )
     parser.add_argument("--export", type=str, help="Export results to CSV (file path)")
     parser.add_argument(
@@ -199,6 +206,7 @@ def main():
                     args.use_mtf,
                     args.backtest,
                     args.wfo,
+                    args.ga,
                 ): t
                 for t in args.tickers
             }
@@ -302,6 +310,11 @@ def generate_table(results, args):
         table.add_column("MC Return", justify="right")
         table.add_column("Risk Ruin", justify="right")
         table.add_column("Sharpe", justify="right")
+    if args.ga:
+        table.add_column("GA Best Ret", justify="right")
+        table.add_column("GA Win %", justify="right")
+        table.add_column("GA Sharpe", justify="right")
+
     if args.wfo:
         table.add_column("OOS Return", justify="right")
         table.add_column("OOS Win %", justify="right")
@@ -370,6 +383,8 @@ def generate_table(results, args):
             action_fmt,
         ]
 
+        # GA MUST HAPPEN AFTER BACKTEST TO ALIGN WITH COLUMNS
+
         if args.backtest and "backtest" in res:
             bt = res["backtest"]
             mc_ret = bt.get("MC Median Return %", 0)
@@ -401,6 +416,18 @@ def generate_table(results, args):
             )
 
             row.extend([mc_fmt, ruin_fmt, sharpe_fmt])
+
+        if args.ga and "ga" in res:
+            ga_res = res["ga"]["final_backtest"]
+            row.extend(
+                [
+                    f"{ga_res.get('Return %', 0):.2f}%",
+                    f"{ga_res.get('Win Rate %', 0):.2f}%",
+                    f"{ga_res.get('Sharpe Ratio', 0):.2f}",
+                ]
+            )
+        elif args.ga:
+            row.extend(["N/A", "N/A", "N/A"])
 
         if args.wfo and "wfo" in res:
             wfo_res = res["wfo"]
