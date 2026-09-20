@@ -299,6 +299,7 @@ def process_ticker_cached(
             "df": df_with_indicators,
             "vpvr_profile": vpvr_profile,
             "rolling_heatmap": rolling_heatmap,
+            "returns_series": df_with_indicators["Close"].pct_change().dropna(),
             **latest_signal,
         }
 

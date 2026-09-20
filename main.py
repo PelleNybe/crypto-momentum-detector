@@ -85,7 +85,21 @@ def process_ticker(ticker, period, interval, use_mtf, run_backtest, run_wfo=Fals
     # AI Confidence is already calculated inside get_latest_signal()
     # We do not need to retrain the predictor here.
 
-    result = {"ticker": ticker, **latest_signal}
+    result = {
+        "ticker": ticker,
+        "returns_series": df_with_indicators["Close"].pct_change().dropna(),
+        **latest_signal,
+    }
+
+    if run_wfo:
+        from crypto_momentum.optimizer import WalkForwardOptimizer
+
+        try:
+            optimizer = WalkForwardOptimizer(data=generator.generate_signals())
+            wfo_results = optimizer.run_optimization()
+            result["wfo"] = wfo_results
+        except Exception as e:
+            result["error"] = f"WFO Error: {str(e)}"
 
     if run_wfo:
         from crypto_momentum.optimizer import WalkForwardOptimizer
@@ -199,7 +213,44 @@ def main():
                 # Update layout body with current table
                 layout["body"].update(generate_table(results, args))
 
+    # --- Modern Portfolio Theory (MPT) Allocator ---
+    valid_results = [r for r in results if "error" not in r and "returns_series" in r]
+    if len(valid_results) > 1:
+        from crypto_momentum.portfolio_manager import MPTAllocator
+        import pandas as pd
+
+        returns_dict = {r["ticker"]: r["returns_series"] for r in valid_results}
+        returns_df = pd.DataFrame(returns_dict)
+
+        allocator = MPTAllocator(returns_data=returns_df)
+        mpt_res = allocator.optimize_portfolio()
+
+        if mpt_res and "weights" in mpt_res:
+            console.print("")
+            mpt_table = Table(
+                box=box.MINIMAL_DOUBLE_HEAD,
+                header_style="bold magenta",
+                title="Optimal Portfolio Allocation (MPT)",
+            )
+            mpt_table.add_column("Asset", justify="left", style="bold white")
+            mpt_table.add_column("Weight Allocation", justify="right")
+
+            for tkr, weight in mpt_res["weights"].items():
+                mpt_table.add_row(tkr, f"{weight * 100:.1f}%")
+
+            console.print(mpt_table)
+            console.print(
+                f"[dim]Expected Annual Return:[/dim] [green]{mpt_res['expected_return_annual'] * 100:.1f}%[/green]"
+            )
+            console.print(
+                f"[dim]Expected Annual Volatility:[/dim] {mpt_res['expected_volatility_annual'] * 100:.1f}%"
+            )
+            console.print(
+                f"[dim]Portfolio Sharpe Ratio:[/dim] {mpt_res['sharpe_ratio']:.2f}"
+            )
+
     if args.save_svg:
+
         console.save_svg("docs/assets/ui_default.svg", title="NeonPulse UI")
         console.print(
             f"[bold green]✓[/bold green] Saved terminal output to docs/assets/ui_default.svg"
@@ -350,7 +401,6 @@ def generate_table(results, args):
             )
 
             row.extend([mc_fmt, ruin_fmt, sharpe_fmt])
-
 
         if args.wfo and "wfo" in res:
             wfo_res = res["wfo"]

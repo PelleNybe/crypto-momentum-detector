@@ -118,9 +118,16 @@ class MarketRegimeDetector:
             self.data["AI_Regime"] = ai_regime_list
             self.data["AI_Regime_Encoded"] = ai_regime_encoded_list
 
-# Use forward fill for the Unknowns at the start using pd series methods safely for pandas 2.3+
-            self.data["AI_Regime"] = self.data["AI_Regime"].replace("Unknown", np.nan).bfill().fillna("Unknown")
-            self.data["AI_Regime_Encoded"] = self.data["AI_Regime_Encoded"].replace(-1, np.nan).bfill().fillna(-1)
+            # Use forward fill for the Unknowns at the start using pd series methods safely for pandas 2.3+
+            self.data["AI_Regime"] = (
+                self.data["AI_Regime"]
+                .replace("Unknown", np.nan)
+                .bfill()
+                .fillna("Unknown")
+            )
+            self.data["AI_Regime_Encoded"] = (
+                self.data["AI_Regime_Encoded"].replace(-1, np.nan).bfill().fillna(-1)
+            )
 
         except Exception as e:
             logger.error(f"Error in Market Regime Detection: {e}")
