@@ -224,6 +224,45 @@ with st.sidebar:
             / 100.0
         )
 
+    with st.expander("🔧 Signal Config"):
+        rsi_buy_min = st.slider("RSI Buy Min", 10, 50, 40)
+        rsi_buy_max = st.slider("RSI Buy Max", 50, 90, 70)
+        rsi_sell_min = st.slider("RSI Sell Min", 10, 50, 30)
+        rsi_sell_max = st.slider("RSI Sell Max", 50, 90, 60)
+        atr_sl_mult = st.number_input(
+            "ATR SL Multiplier", min_value=0.5, max_value=5.0, value=1.5, step=0.1
+        )
+        atr_tp_mult = st.number_input(
+            "ATR TP Multiplier", min_value=1.0, max_value=10.0, value=3.0, step=0.1
+        )
+
+    with st.expander("⚙️ Backtest Config"):
+        initial_balance = st.number_input(
+            "Initial Balance ($)",
+            min_value=100.0,
+            max_value=1000000.0,
+            value=10000.0,
+            step=100.0,
+        )
+        risk_per_trade = (
+            st.number_input(
+                "Risk per Trade (%)", min_value=0.1, max_value=10.0, value=2.0, step=0.1
+            )
+            / 100.0
+        )
+        fee_rate = (
+            st.number_input(
+                "Fee Rate (%)", min_value=0.0, max_value=1.0, value=0.1, step=0.01
+            )
+            / 100.0
+        )
+        slippage = (
+            st.number_input(
+                "Slippage (%)", min_value=0.0, max_value=1.0, value=0.05, step=0.01
+            )
+            / 100.0
+        )
+
     st.divider()
     analyze_button = st.button(
         " INITIATE SCAN",
@@ -438,6 +477,7 @@ if analyze_button:
     st.divider()
 
     # Detailed Charts
+    st.header("📈 Deep Tech Chart Analysis")
     st.header(" Deep Tech Chart Analysis")
 
     # Create tabs for each ticker
@@ -464,6 +504,7 @@ if analyze_button:
 
                 # Create sub-tabs for organizing content
                 sub_tabs = st.tabs(
+                    ["📊 Technical Chart", "🤖 AI Engine", "📈 Backtest & Trade Log"]
                     [
                         " Technical Chart",
                         " AI Engine",
@@ -749,6 +790,7 @@ if analyze_button:
 
                     with col2:
                         st.subheader("Market Dynamics")
+                        st.write(f"**Regime:** {r.get('Market_Regime', 'N/A')}")
                         st.write(
                             f"**Regime:** {r.get('AI_Regime', r.get('Market_Regime', 'N/A'))}"
                         )
@@ -1012,121 +1054,3 @@ if analyze_button:
                         st.info(
                             "Backtest not run or no results available for this ticker."
                         )
-
-                with sub_tabs[3]:
-                    if run_wfo and "wfo" in r:
-                        st.markdown(
-                            "<h3 style='text-align: center; color: #14f5ee; font-family: Orbitron;'>WALK-FORWARD OPTIMIZATION (WFO)</h3>",
-                            unsafe_allow_html=True,
-                        )
-
-                        wfo = r["wfo"]
-
-                        # Risk Profile Summary
-                        rp_col1, rp_col2, rp_col3, rp_col4 = st.columns(4)
-                        with rp_col1:
-                            st.metric(
-                                "OOS Return", f"{wfo.get('OOS Return %', 0):.2f}%"
-                            )
-                            st.metric(
-                                "OOS Win Rate", f"{wfo.get('OOS Win Rate %', 0):.2f}%"
-                            )
-                        with rp_col2:
-                            st.metric(
-                                "Final Balance", f"${wfo.get('Final Balance', 0):,.2f}"
-                            )
-                            st.metric("Total Trades", f"{wfo.get('Total Trades', 0)}")
-                        with rp_col3:
-                            st.metric(
-                                "OOS Sharpe Ratio",
-                                f"{wfo.get('OOS Sharpe Ratio', 0):.2f}",
-                            )
-                        with rp_col4:
-                            st.metric(
-                                "OOS Max Drawdown",
-                                f"{wfo.get('OOS Max Drawdown %', 0):.2f}%",
-                            )
-                            st.metric(
-                                "OOS Profit Factor",
-                                f"{wfo.get('OOS Profit Factor', 0):.2f}",
-                            )
-
-                        st.markdown("---")
-
-                        eq_col, dist_col = st.columns([2, 1])
-
-                        with eq_col:
-                            oos_equity = wfo.get("OOS Equity Curve", [])
-                            if oos_equity:
-                                eq_df = pd.DataFrame(oos_equity)
-                                eq_fig = px.area(
-                                    eq_df,
-                                    x="Date",
-                                    y="Equity",
-                                    title="Out-of-Sample Equity Curve",
-                                )
-                                eq_fig.update_traces(
-                                    line=dict(color="#00ff00", width=2),
-                                    fillcolor="rgba(0, 255, 0, 0.2)",
-                                    hovertemplate="<b>Date</b>: %{x}<br><b>Equity</b>: $%{y:.2f}<extra></extra>",
-                                )
-                                eq_fig.update_layout(
-                                    height=350,
-                                    margin=dict(l=20, r=20, t=40, b=20),
-                                    paper_bgcolor="rgba(0,0,0,0)",
-                                    plot_bgcolor="rgba(15,15,30,0.6)",
-                                    font=dict(color="#e0e0e0"),
-                                )
-                                st.plotly_chart(eq_fig, use_container_width=True)
-
-                        with dist_col:
-                            window_results = wfo.get("Window Results", [])
-                            if window_results:
-                                wr_df = pd.DataFrame(window_results)
-                                wr_df["Window Label"] = wr_df["Window"].astype(str)
-                                dist_fig = px.bar(
-                                    wr_df,
-                                    x="Window Label",
-                                    y="OOS Return %",
-                                    title="OOS Return per Window",
-                                    color="OOS Return %",
-                                    color_continuous_scale=px.colors.diverging.RdYlGn,
-                                )
-                                dist_fig.update_layout(
-                                    height=350,
-                                    margin=dict(l=20, r=20, t=40, b=20),
-                                    paper_bgcolor="rgba(0,0,0,0)",
-                                    plot_bgcolor="rgba(15,15,30,0.6)",
-                                    font=dict(color="#e0e0e0"),
-                                )
-                                st.plotly_chart(dist_fig, use_container_width=True)
-
-                        if window_results:
-                            st.write("**Window-by-Window Results & Best Parameters**")
-                            # Format best params for display
-                            display_df = wr_df.copy()
-                            display_df["Best Params"] = display_df["Best Params"].apply(
-                                lambda x: str(x)
-                            )
-                            st.dataframe(
-                                display_df[
-                                    [
-                                        "Window",
-                                        "Start Date",
-                                        "End Date",
-                                        "OOS Return %",
-                                        "OOS Win Rate %",
-                                        "Best Params",
-                                    ]
-                                ],
-                                use_container_width=True,
-                            )
-
-                    else:
-                        st.info("WFO Analysis not run or no results available.")
-
-
-# Vercel dummy WSGI app
-app = application = lambda env, start_response: start_response(
-    "200 OK", [("Content-Type", "text/plain")]
-) or [b"NeonPulse UI OK"]
