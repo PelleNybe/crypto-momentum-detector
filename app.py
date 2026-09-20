@@ -17,11 +17,12 @@ from crypto_momentum.data_fetcher import DataFetcher
 from crypto_momentum.indicators import MomentumIndicators
 from crypto_momentum.signal_generator import SignalGenerator
 from crypto_momentum.backtester import Backtester
+from crypto_momentum.optimizer import WalkForwardOptimizer
 
 # --- CUSTOM CSS FOR "DEEP TECH / CYBERPUNK" AESTHETIC ---
 st.set_page_config(
     page_title="NeonPulse | Crypto AI Momentum",
-    page_icon="⚡",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -132,7 +133,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.title("⚡ NeonPulse: AI Crypto Terminal")
+st.title(" NeonPulse: AI Crypto Terminal")
 st.markdown("*Advanced Momentum Detection & Machine Learning Predictions*")
 
 
@@ -142,7 +143,7 @@ with st.sidebar:
         "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMjM1YzlkOGU4MjM2ZjY4ZjY4YmRjYzE2ZDZlNzY1MWRkODMwMjJjZiZlcD12MV9pbnRlcm5hbF9naWZzX2dpZklkJmN0PWc/JtBZm3Getg3dqxEX1E/giphy.gif",
         use_container_width=True,
     )
-    st.header("⚙️ System Config")
+    st.header(" System Config")
 
     tickers_input = st.text_area(
         "Target Assets (Comma separated)",
@@ -178,6 +179,50 @@ with st.sidebar:
         value=True,
         help="Run historical simulation with 1000 iteration Monte Carlo risk analysis.",
     )
+    run_wfo = st.checkbox(
+        "Enable Walk-Forward Optimizer (WFO)",
+        value=False,
+        help="Run dynamic rolling optimization on out-of-sample data.",
+    )
+
+    with st.expander(" Signal Config"):
+        rsi_buy_min = st.slider("RSI Buy Min", 10, 50, 40)
+        rsi_buy_max = st.slider("RSI Buy Max", 50, 90, 70)
+        rsi_sell_min = st.slider("RSI Sell Min", 10, 50, 30)
+        rsi_sell_max = st.slider("RSI Sell Max", 50, 90, 60)
+        atr_sl_mult = st.number_input(
+            "ATR SL Multiplier", min_value=0.5, max_value=5.0, value=1.5, step=0.1
+        )
+        atr_tp_mult = st.number_input(
+            "ATR TP Multiplier", min_value=1.0, max_value=10.0, value=3.0, step=0.1
+        )
+
+    with st.expander(" Backtest Config"):
+        initial_balance = st.number_input(
+            "Initial Balance ($)",
+            min_value=100.0,
+            max_value=1000000.0,
+            value=10000.0,
+            step=100.0,
+        )
+        risk_per_trade = (
+            st.number_input(
+                "Risk per Trade (%)", min_value=0.1, max_value=10.0, value=2.0, step=0.1
+            )
+            / 100.0
+        )
+        fee_rate = (
+            st.number_input(
+                "Fee Rate (%)", min_value=0.0, max_value=1.0, value=0.1, step=0.01
+            )
+            / 100.0
+        )
+        slippage = (
+            st.number_input(
+                "Slippage (%)", min_value=0.0, max_value=1.0, value=0.05, step=0.01
+            )
+            / 100.0
+        )
 
     with st.expander("🔧 Signal Config"):
         rsi_buy_min = st.slider("RSI Buy Min", 10, 50, 40)
@@ -220,7 +265,7 @@ with st.sidebar:
 
     st.divider()
     analyze_button = st.button(
-        "🚀 INITIATE SCAN",
+        " INITIATE SCAN",
         use_container_width=True,
         help="Click to start fetching data and calculating momentum signals",
     )
@@ -233,6 +278,7 @@ def process_ticker_cached(
     interval,
     use_mtf,
     run_backtest,
+    run_wfo,
     rsi_buy_min,
     rsi_buy_max,
     rsi_sell_min,
@@ -270,6 +316,7 @@ def process_ticker_cached(
 
         # Extract VPVR profile directly from the instance to avoid recalculating
         vpvr_profile = indicators.vpvr_profile
+        rolling_heatmap = indicators.rolling_vpvr_heatmap
 
         generator = SignalGenerator(
             data=df_with_indicators,
@@ -290,8 +337,20 @@ def process_ticker_cached(
             "ticker": ticker,
             "df": df_with_indicators,
             "vpvr_profile": vpvr_profile,
+            "rolling_heatmap": rolling_heatmap,
+            "returns_series": df_with_indicators["Close"].pct_change().dropna(),
             **latest_signal,
         }
+
+        if run_wfo:
+            from crypto_momentum.optimizer import WalkForwardOptimizer
+
+            try:
+                optimizer = WalkForwardOptimizer(data=generator.generate_signals())
+                wfo_results = optimizer.run_optimization()
+                result["wfo"] = wfo_results
+            except Exception as e:
+                result["error"] = f"WFO Error: {str(e)}"
 
         if run_backtest:
             df_signals = generator.generate_signals()
@@ -315,7 +374,7 @@ if analyze_button:
     tickers = [t.strip() for t in tickers_input.split(",") if t.strip()]
 
     if not tickers:
-        st.error("⚠️ Please specify at least one target asset.")
+        st.error(" Please specify at least one target asset.")
         st.stop()
 
     results_container = st.empty()
@@ -338,6 +397,7 @@ if analyze_button:
                 interval,
                 use_mtf,
                 run_backtest,
+                run_wfo,
                 rsi_buy_min,
                 rsi_buy_max,
                 rsi_sell_min,
@@ -364,15 +424,15 @@ if analyze_button:
     status_text.empty()
 
     if not successful_results:
-        st.toast("🚨 Scanning Failed!", icon="🚨")
-        st.error("🚨 System Failure: Could not establish connection to market data.")
+        st.toast(" Scanning Failed!", icon="")
+        st.error(" System Failure: Could not establish connection to market data.")
         st.stop()
 
     execution_time = time.time() - start_time
-    st.toast(f"✅ Analysis complete in {execution_time:.2f}s!", icon="✅")
+    st.toast(f" Analysis complete in {execution_time:.2f}s!", icon="")
 
     # Portfolio Summary
-    st.header("📊 AI Terminal Summary")
+    st.header(" AI Terminal Summary")
 
     col1, col2, col3, col4 = st.columns(4)
 
@@ -390,8 +450,8 @@ if analyze_button:
         )
 
     with col2:
-        st.markdown(f"**📈 BUY Configs:** {len(buy_signals)}")
-        st.markdown(f"**📉 SELL Configs:** {len(sell_signals)}")
+        st.markdown(f"** BUY Configs:** {len(buy_signals)}")
+        st.markdown(f"** SELL Configs:** {len(sell_signals)}")
 
     with col3:
         st.metric(
@@ -418,6 +478,7 @@ if analyze_button:
 
     # Detailed Charts
     st.header("📈 Deep Tech Chart Analysis")
+    st.header(" Deep Tech Chart Analysis")
 
     # Create tabs for each ticker
     ticker_names = [r["ticker"] for r in successful_results]
@@ -444,6 +505,12 @@ if analyze_button:
                 # Create sub-tabs for organizing content
                 sub_tabs = st.tabs(
                     ["📊 Technical Chart", "🤖 AI Engine", "📈 Backtest & Trade Log"]
+                    [
+                        " Technical Chart",
+                        " AI Engine",
+                        " Backtest & Trade Log",
+                        " WFO Analysis",
+                    ]
                 )
 
                 with sub_tabs[0]:
@@ -462,6 +529,25 @@ if analyze_button:
                             [{"type": "xy", "colspan": 2}, None],
                         ],
                     )
+
+                    # --- Rolling Liquidity Heatmap ---
+                    heatmap_df = r.get("rolling_heatmap", pd.DataFrame())
+                    if not heatmap_df.empty:
+                        # Add a 2D Heatmap overlay behind the candlesticks
+                        fig.add_trace(
+                            go.Heatmap(
+                                z=heatmap_df.values.T,  # Transpose to map price to Y, time to X
+                                x=heatmap_df.index,
+                                y=heatmap_df.columns,
+                                colorscale="Inferno",
+                                opacity=0.3,  # Make it semi-transparent so candles are visible
+                                showscale=False,
+                                hoverinfo="skip",  # Prevent hover clutter
+                                name="Liquidity Heatmap",
+                            ),
+                            row=1,
+                            col=1,
+                        )
 
                     # --- Candlestick chart ---
                     fig.add_trace(
@@ -705,6 +791,9 @@ if analyze_button:
                     with col2:
                         st.subheader("Market Dynamics")
                         st.write(f"**Regime:** {r.get('Market_Regime', 'N/A')}")
+                        st.write(
+                            f"**Regime:** {r.get('AI_Regime', r.get('Market_Regime', 'N/A'))}"
+                        )
                         st.write(f"**Pattern:** {r.get('Pattern', 'None')}")
                         st.write(
                             f"**OBV Bull Div:** {'Yes' if r.get('OBV_Bullish_Div') else 'No'}"
