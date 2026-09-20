@@ -1,5 +1,6 @@
 import pandas as pd
 from ta.momentum import RSIIndicator, StochRSIIndicator
+from crypto_momentum.regime_detector import MarketRegimeDetector
 from ta.trend import MACD, SMAIndicator, EMAIndicator, IchimokuIndicator, ADXIndicator
 from ta.volatility import BollingerBands, AverageTrueRange
 from ta.volume import OnBalanceVolumeIndicator, VolumeWeightedAveragePrice
@@ -51,6 +52,57 @@ class MomentumIndicators:
             }
         )
         return {"poc_price": poc_price, "profile": profile_df}
+
+    def calculate_rolling_vpvr(
+        self, df: pd.DataFrame, window: int = 30, bins: int = 50
+    ) -> pd.DataFrame:
+        """
+        Calculates a rolling Volume Profile (Liquidity Heatmap Proxy).
+        Returns a DataFrame where the index is Time, columns are Price Bins, and values are Volume.
+        """
+        if df.empty or "Volume" not in df.columns:
+            return pd.DataFrame()
+
+        # To keep it performant, we won't calculate it for every single row if the dataset is huge.
+        # But for standard analysis (e.g., 6mo daily = ~180 rows), iterating is acceptable.
+
+        heatmap_data = []
+        indices = []
+
+        # We need to define static price bins for the entire period so the heatmap aligns correctly
+        global_min = df["Low"].min()
+        global_max = df["High"].max()
+
+        if pd.isna(global_min) or pd.isna(global_max) or global_min == global_max:
+            return pd.DataFrame()
+
+        price_bins = np.linspace(global_min, global_max, bins + 1)
+        bin_centers = (price_bins[:-1] + price_bins[1:]) / 2
+
+        df_typical = (df["High"] + df["Low"] + df["Close"]) / 3
+        bin_indices_all = np.digitize(df_typical, price_bins)
+
+        for i in range(window, len(df) + 1):
+            window_df = df.iloc[i - window : i]
+            window_indices = bin_indices_all[i - window : i]
+            window_volume = window_df["Volume"].values
+
+            valid_mask = (window_indices >= 1) & (window_indices <= bins)
+
+            volume_profile = np.bincount(
+                window_indices[valid_mask] - 1,
+                weights=window_volume[valid_mask],
+                minlength=bins,
+            ).astype(float)
+
+            heatmap_data.append(volume_profile)
+            indices.append(df.index[i - 1])
+
+        if not heatmap_data:
+            return pd.DataFrame()
+
+        heatmap_df = pd.DataFrame(heatmap_data, index=indices, columns=bin_centers)
+        return heatmap_df
 
     def calculate_fibonacci_retracements(
         self, df: pd.DataFrame, period: int = 100
@@ -200,6 +252,7 @@ class MomentumIndicators:
         vpvr_data = self.calculate_vpvr(df)
         df["VPVR_POC"] = vpvr_data["poc_price"]
         self.vpvr_profile = vpvr_data["profile"]
+        self.rolling_vpvr_heatmap = self.calculate_rolling_vpvr(df)
 
         # NEW FEATURES
         # VWAP
@@ -220,6 +273,7 @@ class MomentumIndicators:
         df["DI_Plus"] = adx.adx_pos()
         df["DI_Minus"] = adx.adx_neg()
 
+        # Static ADX Regime
         df["Market_Regime"] = "Ranging"
         df.loc[(df["ADX"] > 25) & (df["DI_Plus"] > df["DI_Minus"]), "Market_Regime"] = (
             "Trending Bullish"
@@ -227,6 +281,16 @@ class MomentumIndicators:
         df.loc[(df["ADX"] > 25) & (df["DI_Minus"] > df["DI_Plus"]), "Market_Regime"] = (
             "Trending Bearish"
         )
+
+        # New Unsupervised AI Regime
+        regime_detector = MarketRegimeDetector(data=df)
+        df_with_regime = regime_detector.detect_regimes()
+        if "AI_Regime" in df_with_regime.columns:
+            df["AI_Regime"] = df_with_regime["AI_Regime"]
+            df["AI_Regime_Encoded"] = df_with_regime["AI_Regime_Encoded"]
+        else:
+            df["AI_Regime"] = "Unknown"
+            df["AI_Regime_Encoded"] = -1
 
         stoch_rsi = StochRSIIndicator(close=close, window=14, smooth1=3, smooth2=3)
         df["Stoch_RSI_K"] = stoch_rsi.stochrsi_k()

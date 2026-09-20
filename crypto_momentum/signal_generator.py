@@ -228,6 +228,8 @@ class SignalGenerator:
             "Chandelier_Long": latest.get("Chandelier_Long", np.nan),
             "Chandelier_Short": latest.get("Chandelier_Short", np.nan),
             "Market_Regime": latest.get("Market_Regime", "Ranging"),
+            "AI_Regime": latest.get("AI_Regime", "Unknown"),
+            "AI_Regime_Encoded": latest.get("AI_Regime_Encoded", -1),
             "Stoch_Bullish_Cross": latest.get("Stoch_Bullish_Cross", False),
             "Stoch_Bearish_Cross": latest.get("Stoch_Bearish_Cross", False),
         }
