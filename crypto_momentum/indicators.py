@@ -278,6 +278,27 @@ class MomentumIndicators:
         df.loc[(df["ADX"] > 25) & (df["DI_Plus"] > df["DI_Minus"]), "Market_Regime"] = (
             "Trending Bullish"
         )
+
+        # New Unsupervised AI Regime
+        regime_detector = MarketRegimeDetector(data=df)
+        df_with_regime = regime_detector.detect_regimes()
+        if "AI_Regime" in df_with_regime.columns:
+            df["AI_Regime"] = df_with_regime["AI_Regime"]
+            df["AI_Regime_Encoded"] = df_with_regime["AI_Regime_Encoded"]
+        else:
+            df["AI_Regime"] = "Unknown"
+            df["AI_Regime_Encoded"] = -1
+
+        # New Unsupervised AI Regime
+        regime_detector = MarketRegimeDetector(data=df)
+        df_with_regime = regime_detector.detect_regimes()
+        if "AI_Regime" in df_with_regime.columns:
+            df["AI_Regime"] = df_with_regime["AI_Regime"]
+            df["AI_Regime_Encoded"] = df_with_regime["AI_Regime_Encoded"]
+        else:
+            df["AI_Regime"] = "Unknown"
+            df["AI_Regime_Encoded"] = -1
+
         df.loc[(df["ADX"] > 25) & (df["DI_Minus"] > df["DI_Plus"]), "Market_Regime"] = (
             "Trending Bearish"
         )
