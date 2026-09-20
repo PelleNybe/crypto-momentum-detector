@@ -101,6 +101,16 @@ def process_ticker(ticker, period, interval, use_mtf, run_backtest, run_wfo=Fals
         except Exception as e:
             result["error"] = f"WFO Error: {str(e)}"
 
+    if run_wfo:
+        from crypto_momentum.optimizer import WalkForwardOptimizer
+
+        try:
+            optimizer = WalkForwardOptimizer(data=generator.generate_signals())
+            wfo_results = optimizer.run_optimization()
+            result["wfo"] = wfo_results
+        except Exception as e:
+            result["error"] = f"WFO Error: {str(e)}"
+
     if run_backtest:
         df_signals = generator.generate_signals()
         backtester = Backtester(data=df_signals)
@@ -413,7 +423,15 @@ def generate_table(results, args):
 if __name__ == "__main__":
     main()
 
-# Vercel dummy WSGI app
-app = application = lambda env, start_response: start_response(
-    "200 OK", [("Content-Type", "text/plain")]
-) or [b"NeonPulse API OK"]
+
+# --- Vercel Serverless Function Compatibility ---
+# Vercel's Python runtime automatically detects app.py or main.py and expects a WSGI/ASGI application.
+# This dummy application is provided to allow the Vercel build process to pass
+# without throwing the "none export a top-level app, application, or handler variable" error.
+def app(environ, start_response):
+    start_response("200 OK", [("Content-Type", "text/plain")])
+    return [b"CLI applications cannot be run natively on Vercel Serverless Functions."]
+
+
+application = app
+handler = app
