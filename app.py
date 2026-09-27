@@ -390,10 +390,20 @@ def process_ticker_cached(
 
 # --- MAIN LOGIC ---
 if analyze_button:
-    tickers = [t.strip() for t in tickers_input.split(",") if t.strip()]
+    import re
+
+    raw_tickers = [t.strip() for t in tickers_input.split(",") if t.strip()]
+    tickers = []
+
+    # SECURITY & UX OPTIMIZATION: Validate ticker inputs to prevent injection and bad requests
+    for t in raw_tickers:
+        if re.match(r"^[A-Za-z0-9\-]+$", t):
+            tickers.append(t)
+        else:
+            st.toast(f" Invalid ticker format '{t}' ignored.", icon="⚠️")
 
     if not tickers:
-        st.error(" Please specify at least one target asset.")
+        st.error(" Please specify at least one valid target asset.")
         st.stop()
 
     results_container = st.empty()
@@ -407,7 +417,10 @@ if analyze_button:
     total_tickers = len(tickers)
 
     # Execute Concurrently
-    with ThreadPoolExecutor(max_workers=min(10, total_tickers)) as executor:
+    # UX OPTIMIZATION: Wrap the entire execution block in a clear spinner
+    with st.spinner(
+        "Analyzing market data across multiple dimensions..."
+    ), ThreadPoolExecutor(max_workers=min(10, total_tickers)) as executor:
         futures = {
             executor.submit(
                 process_ticker_cached,
