@@ -227,7 +227,7 @@ def main():
         from crypto_momentum.portfolio_manager import MPTAllocator
         import pandas as pd
 
-        returns_dict = {r["ticker"]: r["returns_series"] for r in valid_results}
+        returns_dict = {r["ticker"]: r["returns_series"][~r["returns_series"].index.duplicated(keep='first')] for r in valid_results}
         returns_df = pd.DataFrame(returns_dict)
 
         allocator = MPTAllocator(returns_data=returns_df)
