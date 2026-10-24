@@ -105,7 +105,7 @@ class DataFetcher:
                     f"Loading {period}/{interval} for {self.ticker_symbol} from local Parquet cache"
                 )
                 try:
-                    df = pd.read_parquet(cache_path, engine="fastparquet")
+                    df = pd.read_parquet(cache_path, engine="pyarrow")
                     return df
                 except Exception as e:
                     logger.warning(
@@ -131,7 +131,7 @@ class DataFetcher:
                 # Save to cache
                 try:
                     result_df.to_parquet(
-                        cache_path, engine="fastparquet", compression="snappy"
+                        cache_path, engine="pyarrow", compression="snappy"
                     )
                     # Security Improvement: Ensure cached files have strict permissions
                     os.chmod(cache_path, 0o600)
@@ -177,7 +177,7 @@ class DataFetcher:
                     f"Loading HTF {htf_period}/{htf_interval} for {self.ticker_symbol} from cache"
                 )
                 try:
-                    df = pd.read_parquet(cache_path, engine="fastparquet")
+                    df = pd.read_parquet(cache_path, engine="pyarrow")
                     return df
                 except Exception as e:
                     logger.warning(
@@ -200,7 +200,7 @@ class DataFetcher:
                 result_df = df[["Open", "High", "Low", "Close", "Volume"]]
                 try:
                     result_df.to_parquet(
-                        cache_path, engine="fastparquet", compression="snappy"
+                        cache_path, engine="pyarrow", compression="snappy"
                     )
                     # Security Improvement: Ensure cached files have strict permissions
                     os.chmod(cache_path, 0o600)
