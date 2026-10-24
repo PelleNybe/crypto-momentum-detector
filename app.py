@@ -229,6 +229,45 @@ with st.sidebar:
             / 100.0
         )
 
+    with st.expander("🔧 Signal Config"):
+        rsi_buy_min = st.slider("RSI Buy Min", 10, 50, 40)
+        rsi_buy_max = st.slider("RSI Buy Max", 50, 90, 70)
+        rsi_sell_min = st.slider("RSI Sell Min", 10, 50, 30)
+        rsi_sell_max = st.slider("RSI Sell Max", 50, 90, 60)
+        atr_sl_mult = st.number_input(
+            "ATR SL Multiplier", min_value=0.5, max_value=5.0, value=1.5, step=0.1
+        )
+        atr_tp_mult = st.number_input(
+            "ATR TP Multiplier", min_value=1.0, max_value=10.0, value=3.0, step=0.1
+        )
+
+    with st.expander("⚙️ Backtest Config"):
+        initial_balance = st.number_input(
+            "Initial Balance ($)",
+            min_value=100.0,
+            max_value=1000000.0,
+            value=10000.0,
+            step=100.0,
+        )
+        risk_per_trade = (
+            st.number_input(
+                "Risk per Trade (%)", min_value=0.1, max_value=10.0, value=2.0, step=0.1
+            )
+            / 100.0
+        )
+        fee_rate = (
+            st.number_input(
+                "Fee Rate (%)", min_value=0.0, max_value=1.0, value=0.1, step=0.01
+            )
+            / 100.0
+        )
+        slippage = (
+            st.number_input(
+                "Slippage (%)", min_value=0.0, max_value=1.0, value=0.05, step=0.01
+            )
+            / 100.0
+        )
+
     st.divider()
     analyze_button = st.button(
         " INITIATE SCAN",
@@ -351,10 +390,20 @@ def process_ticker_cached(
 
 # --- MAIN LOGIC ---
 if analyze_button:
-    tickers = [t.strip() for t in tickers_input.split(",") if t.strip()]
+    import re
+
+    raw_tickers = [t.strip() for t in tickers_input.split(",") if t.strip()]
+    tickers = []
+
+    # SECURITY & UX OPTIMIZATION: Validate ticker inputs to prevent injection and bad requests
+    for t in raw_tickers:
+        if re.match(r"^[A-Za-z0-9\-]+$", t):
+            tickers.append(t)
+        else:
+            st.toast(f" Invalid ticker format '{t}' ignored.", icon="⚠️")
 
     if not tickers:
-        st.error(" Please specify at least one target asset.")
+        st.error(" Please specify at least one valid target asset.")
         st.stop()
 
     results_container = st.empty()
@@ -368,7 +417,10 @@ if analyze_button:
     total_tickers = len(tickers)
 
     # Execute Concurrently
-    with ThreadPoolExecutor(max_workers=min(10, total_tickers)) as executor:
+    # UX OPTIMIZATION: Wrap the entire execution block in a clear spinner
+    with st.spinner(
+        "Analyzing market data across multiple dimensions..."
+    ), ThreadPoolExecutor(max_workers=min(10, total_tickers)) as executor:
         futures = {
             executor.submit(
                 process_ticker_cached,
@@ -458,6 +510,7 @@ if analyze_button:
     st.divider()
 
     # Detailed Charts
+    st.header("📈 Deep Tech Chart Analysis")
     st.header(" Deep Tech Chart Analysis")
 
     # Create tabs for each ticker

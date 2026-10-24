@@ -124,7 +124,8 @@ class Backtester:
             "HOLD": 0,
         }
         _indexes = self.data.index.values
-        _signals = np.array([signal_map.get(s, 0) for s in self.data["Signal"].values])
+        # OPTIMIZATION: Vectorize the string-to-integer mapping instead of list comprehension
+        _signals = self.data["Signal"].map(signal_map).fillna(0).to_numpy(dtype=int)
         _closes = self.data["Close"].values
         _highs = self.data["High"].values if has_high else _closes
         _lows = self.data["Low"].values if has_low else _closes
