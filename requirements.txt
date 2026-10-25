@@ -10,3 +10,4 @@ plotly>=7.1.0
 scikit-learn
 fastparquet
 pyarrow
+pytest-mock
