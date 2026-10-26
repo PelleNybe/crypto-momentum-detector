@@ -39,3 +39,25 @@ def test_backtester_empty_data():
     bt = Backtester(pd.DataFrame())
     results = bt.run()
     assert results == {}
+
+
+def test_backtester_trade_return_with_fees():
+    # Buy at 100, Sell at 100.2
+    # Gain is 0.2%, but fee is 0.1% per trade + slippage 0.05% per trade
+    # Buy execution: 100 * (1 + 0.0005) = 100.05
+    # Fee: 100.05 * 0.001 = 0.10005
+    # Sell execution: 100.2 * (1 - 0.0005) = 100.1499
+    # Fee: 100.1499 * 0.001 = 0.1001499
+    # We expect a net loss.
+    data = {
+        "Close": [100.0, 100.0, 100.2, 100.2],
+        "Signal": ["HOLD", "BUY", "SELL", "HOLD"],
+    }
+    df = pd.DataFrame(data)
+    bt = Backtester(df, initial_balance=1000.0, fee_rate=0.001, slippage=0.0005)
+    results = bt.run()
+
+    assert results["Total Trades"] == 1
+    # Trade should be a loss, meaning Win Rate % should be 0.0
+    assert results["Win Rate %"] == 0.0
+    assert results["Trade Log"][0]["Return %"] < 0

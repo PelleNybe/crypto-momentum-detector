@@ -97,6 +97,7 @@ class Backtester:
 
         balance = self.initial_balance
         crypto_holdings = 0.0
+        capital_invested = 0.0
 
         trades = []
         trade_log = []
@@ -159,7 +160,7 @@ class Backtester:
                     fee = revenue * self.fee_rate
                     net_revenue = revenue - fee
 
-                    trade_return = (execution_price - entry_price) / entry_price
+                    trade_return = (net_revenue - capital_invested) / capital_invested
                     trades.append(trade_return)
 
                     trade_log.append(
@@ -174,6 +175,7 @@ class Backtester:
 
                     balance += net_revenue
                     crypto_holdings = 0.0
+                    capital_invested = 0.0
                     entry_price = 0.0
                     stop_loss = 0.0
                     take_profit = 0.0
@@ -207,6 +209,7 @@ class Backtester:
 
                     crypto_holdings += crypto_bought - (fee / execution_price)
                     balance -= position_size_usd
+                    capital_invested = position_size_usd
 
                     entry_price = execution_price
                     stop_loss = sl_price
@@ -219,7 +222,7 @@ class Backtester:
                 net_revenue = revenue - fee
 
                 if entry_price > 0:
-                    trade_return = (execution_price - entry_price) / entry_price
+                    trade_return = (net_revenue - capital_invested) / capital_invested
                     trades.append(trade_return)
 
                     trade_log.append(
@@ -234,6 +237,7 @@ class Backtester:
 
                 balance += net_revenue
                 crypto_holdings = 0.0
+                capital_invested = 0.0
                 entry_price = 0.0
                 stop_loss = 0.0
                 take_profit = 0.0
